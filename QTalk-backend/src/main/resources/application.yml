@@ -1,0 +1,14 @@
+server:
+  port: 9090
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      max: 1000
+      min-spare: 30
+
+spring:
+  application:
+    name: QTalk-backend
+    version: 1.0.0
+  profiles:
+    active: datasource,swagger
