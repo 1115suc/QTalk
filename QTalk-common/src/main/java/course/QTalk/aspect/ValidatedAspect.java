@@ -6,11 +6,11 @@ import cn.hutool.json.JSONUtil;
 import course.QTalk.exception.QTException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -21,16 +21,20 @@ import java.util.stream.Collectors;
 
 /**
  * 请求参数校验切面，统一对Controller中@RequestBody映射的对象进行校验，在Controller方法中无需单独处理
+ * @author 1115suc
+  @date 2026/2/25
  */
 @Aspect
 @Slf4j
-@EnableAspectJAutoProxy
 @Component
+@EnableAspectJAutoProxy
+@RequiredArgsConstructor
 public class ValidatedAspect {
-    @Autowired
-    private Validator validator;
+    private final Validator validator;
 
-    @Around("execution(* course.QTalk.controller.*Controller.*(..))")
+    @Around("execution(* *(..)) && ("
+            + "@within(org.springframework.web.bind.annotation.RestController) || "
+            + "@within(org.springframework.stereotype.Controller))")
     public Object around(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         // 获取@RequestBody映射的对象
         Object body = AspectUtil.getBody(proceedingJoinPoint);
@@ -48,5 +52,4 @@ public class ValidatedAspect {
         //校验通过，执行原方法
         return proceedingJoinPoint.proceed(proceedingJoinPoint.getArgs());
     }
-
 }

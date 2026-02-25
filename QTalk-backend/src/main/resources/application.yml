@@ -12,3 +12,6 @@ spring:
     version: 1.0.0
   profiles:
     active: datasource,swagger
+
+logging:
+  config: classpath:logback-spring.xml
