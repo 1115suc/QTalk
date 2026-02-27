@@ -1,0 +1,10 @@
+knife4j:
+  enable: true
+  swagger:
+    package-path: course.QTalk.controller
+    title: QTalk - 青言速递服务接口文档
+    description: 该服务提供青言速递的服务接口。
+    contact-name: ${spring.application.name}
+    contact-url: www.QTalk.com
+    contact-email: 1115suc@gmail.com
+    version: ${spring.application.version}
