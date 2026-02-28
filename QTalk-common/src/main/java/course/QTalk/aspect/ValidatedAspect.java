@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 @Aspect
 @Slf4j
 @Component
-@EnableAspectJAutoProxy
 @RequiredArgsConstructor
 public class ValidatedAspect {
     private final Validator validator;

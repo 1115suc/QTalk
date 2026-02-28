@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="course.QTalk.mapper.QtContactRequestMapper">
+
+    <resultMap id="BaseResultMap" type="course.QTalk.pojo.po.QtContactRequest">
+            <id property="id" column="id" />
+            <result property="fromUid" column="from_uid" />
+            <result property="toId" column="to_id" />
+            <result property="toType" column="to_type" />
+            <result property="contactId" column="contact_id" />
+            <result property="reason" column="reason" />
+            <result property="status" column="status" />
+            <result property="createTime" column="create_time" />
+            <result property="handleTime" column="handle_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,from_uid,to_id,to_type,contact_id,reason,
+        status,create_time,handle_time
+    </sql>
+</mapper>
