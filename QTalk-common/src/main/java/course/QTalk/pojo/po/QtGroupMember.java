@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -12,6 +14,7 @@ import lombok.Data;
  * @TableName qt_group_member
  */
 @TableName(value ="qt_group_member")
+@Builder
 @Data
 public class QtGroupMember {
     /**

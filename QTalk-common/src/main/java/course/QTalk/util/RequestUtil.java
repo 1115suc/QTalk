@@ -49,12 +49,11 @@ public class RequestUtil {
      * 获取 Token（支持 Authorization 头和 token 参数）
      */
     public static String getToken(HttpServletRequest request) {
-        String token = request.getHeader("Token");
+        String token = request.getHeader("Authorization");
         if (StringUtils.hasText(token)) {
             // 去掉 Bearer 前缀
             return token.startsWith("Bearer ") ? token.substring(7) : token;
         }
-        token = request.getParameter("token");
         return StringUtils.hasText(token) ? token : "anonymous";
     }
 }

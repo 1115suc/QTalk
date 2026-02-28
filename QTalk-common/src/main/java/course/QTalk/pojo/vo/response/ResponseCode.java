@@ -10,6 +10,7 @@ public enum ResponseCode {
     PASSWORD_ERROR(0, "密码错误"),
     RESET_PASSWORD_SUCCESS(200, "重置密码成功"),
     LOGIN_ERROR(0, "登录失败"),
+    LOGIN_TIMEOUT(0, "登录超时"),
     LOGIN_FROM_ERROR(0, "登录来源错误"),
     CHECK_CODE_EXPIRED(0, "验证码已失效"),
     DATA_ERROR(0, "参数异常"),
@@ -34,7 +35,11 @@ public enum ResponseCode {
     OPERATION_MENU_PERMISSION_BTN_ERROR(0, "操作后的菜单类型是按钮，所属菜单必须为菜单类型"),
     OPERATION_MENU_PERMISSION_URL_CODE_NULL(0, "菜单权限的按钮标识不能为空"),
     ROLE_PERMISSION_RELATION(0, "该菜单权限存在子集关联，不允许删除"),
-    SYSTEM_PASSWORD_ERROR(0, "系统密码错误");
+    SYSTEM_PASSWORD_ERROR(0, "系统密码错误"),
+    SERVER_ERROR(500, "服务器返回错误，请联系管理员"),
+    GROUP_CREATE_SUCCESS(200, "创建群聊成功"),
+    //创建群聊失败，群聊头像上传失败
+    GROUP_AVATAR_UPLOAD_ERROR(0, "创建群聊失败，群聊头像上传失败");
 
     private int code;
     private String message;

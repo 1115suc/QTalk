@@ -12,10 +12,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.RedisConstant;
 import course.QTalk.constant.TimeConstant;
-import course.QTalk.enums.*;
 import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
 import course.QTalk.pojo.dto.TokenUserDTO;
+import course.QTalk.pojo.enums.*;
 import course.QTalk.pojo.po.SysUser;
 import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.*;
 import java.util.Date;
@@ -125,6 +126,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public R<UserLoginVO> emailPasswordLogin(EmailPasswordLoginVO emailPasswordLoginVo) {
         String checkCode = emailPasswordLoginVo.getCheckCode();
         String sessionId = emailPasswordLoginVo.getSessionId();
@@ -135,6 +137,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public R<UserLoginVO> emailCodeLogin(EmailCodeLoginVO emailCodeLoginVo) {
         String email = emailCodeLoginVo.getEmail();
         String code = emailCodeLoginVo.getEmailCode();
@@ -164,7 +167,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         }
 
         // 密码校验 (仅当传入密码时)
-        if (password != null && !passwordEncoder.matches(passwordEncoder.encode(password), sysUser.getPassword())) {
+        if (password != null && !passwordEncoder.matches(password, sysUser.getPassword())) {
             throw new QTWebException(ResponseCode.PASSWORD_ERROR.getMessage());
         }
 
@@ -197,7 +200,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
 
             UserLoginVO userLoginVO = new UserLoginVO();
             userLoginVO.setUid(sysUser.getUid());
-            userLoginVO.setUid(sysUser.getNickName());
+            userLoginVO.setNickname(sysUser.getNickName());
             userLoginVO.setAvatar(sysUser.getAvatar());
             userLoginVO.setToken(token);
             return R.ok(ResponseCode.LOGIN_SUCCESS.getMessage(), userLoginVO);

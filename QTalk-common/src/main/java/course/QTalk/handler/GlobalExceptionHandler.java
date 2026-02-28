@@ -1,16 +1,17 @@
 package course.QTalk.handler;
 
-import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
+import course.QTalk.exception.RepeatSubmitException;
+import course.QTalk.pojo.enums.ResponseCodeEnum;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -19,11 +20,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -31,123 +31,107 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     /**
-     * 处理 MethodArgumentNotValidException (Spring Boot 参数校验失败)
-     *
-     * @param exception 参数校验异常
-     * @return 响应数据
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        log.error("参数校验失败异常 -> ", exception); // 总是打印日志
-        BindingResult bindingResult = exception.getBindingResult();
-        Map<String, String> errors = new HashMap<>();
-        for (FieldError fieldError : bindingResult.getFieldErrors()) {
-            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(MapUtil.<String, Object>builder()
-                        .put("code", HttpStatus.BAD_REQUEST.value())
-                        .put("msg", errors) // 返回具体的字段错误信息
-                        .build());
-    }
-
-    /**
-     * 请求体解析异常处理
-     * 用于处理请求体格式错误、空字符串、JSON解析失败等情况
-     *
-     * @param exception 请求体不可读异常
-     * @return 响应数据
-     */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Object> handle(HttpMessageNotReadableException exception) {
-        log.error("请求体解析异常 -> ", exception); // 总是打印日志
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(MapUtil.<String, Object>builder()
-                        .put("code", HttpStatus.BAD_REQUEST.value())
-                        .put("msg", "请求体格式错误，请传入正确的JSON格式数据")
-                        .build());
-    }
-
-
-    /**
-     * 参数校验失败异常
-     *
-     * @param exception 校验失败异常
-     * @return 响应数据
-     */
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<Object> handle(ValidationException exception) {
-        List<String> errors = null;
-        if (exception instanceof ConstraintViolationException) {
-            ConstraintViolationException exs = (ConstraintViolationException) exception;
-            Set<ConstraintViolation<?>> violations = exs.getConstraintViolations();
-            errors = violations.stream()
-                    .map(ConstraintViolation::getMessage).collect(Collectors.toList());
-        }
-        if (ObjectUtil.isNotEmpty(exception.getCause())) {
-            log.error("参数校验失败异常 -> ", exception);
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(MapUtil.<String, Object>builder()
-                        .put("code", HttpStatus.BAD_REQUEST.value())
-                        .put("msg", errors)
-                        .build());
-    }
-
-    /**
      * 自定义异常处理
-     *
-     * @param exception 自定义异常
-     * @return 响应数据
      */
     @ExceptionHandler(QTException.class)
     public ResponseEntity<Object> handle(QTException exception) {
         if (ObjectUtil.isNotEmpty(exception.getCause())) {
             log.error("自定义异常处理 -> ", exception);
         }
-        return ResponseEntity.status(exception.getStatus())
-                .body(MapUtil.<String, Object>builder()
-                        .put("code", exception.getCode())
-                        .put("msg", exception.getMsg())
-                        .build());
+        return buildResponse(exception.getCode(), exception.getMsg(), exception.getStatus());
     }
 
     /**
      * web自定义异常处理
-     * 用于统一封装VO对象返回前端
-     *
-     * @param exception web自定义异常
-     * @return 响应数据
      */
     @ExceptionHandler(QTWebException.class)
     public ResponseEntity<Object> handle(QTWebException exception) {
         if (ObjectUtil.isNotEmpty(exception.getCause())) {
             log.error("自定义异常处理 -> ", exception);
         }
-        JSONObject jsonObject = JSONUtil.parseObj(exception);
-        return ResponseEntity.ok(MapUtil.<String, Object>builder()
-                .put("code", exception.getCode())
-                .put("msg", jsonObject.getStr("msg"))
-                .build());
+        return buildResponse(exception.getCode(), exception.getMsg(), exception.getStatus());
+    }
+
+    /**
+     * 参数校验失败异常
+     */
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<Object> handle(ValidationException exception) {
+        List<String> errors = new ArrayList<>();
+        if (exception instanceof ConstraintViolationException) {
+            ConstraintViolationException exs = (ConstraintViolationException) exception;
+            Set<ConstraintViolation<?>> violations = exs.getConstraintViolations();
+            errors = violations.stream()
+                    .map(ConstraintViolation::getMessage).collect(Collectors.toList());
+        }
+        log.error("参数校验失败异常 -> ", exception);
+        String msg = errors.isEmpty() ? ResponseCodeEnum.CODE_600.getMsg() : errors.toString();
+        return buildResponse(ResponseCodeEnum.CODE_600.getCode(), msg, HttpStatus.BAD_REQUEST);
     }
 
     /**
      * 其他未知异常
-     *
-     * @param exception 未知异常
-     * @return 响应数据
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handle(Exception exception) {
-        if (ObjectUtil.isNotEmpty(exception.getCause())) {
-            log.error("其他未知异常 -> ", exception);
+    public ResponseEntity<Object> handle(Exception exception, HttpServletRequest request) {
+        log.error("请求错误，请求地址{},错误信息:", request.getRequestURL(), exception);
+
+        ResponseCodeEnum responseCode;
+        String extraMsg = null;
+        HttpStatus httpStatus = HttpStatus.OK;
+
+        if (exception instanceof MethodArgumentNotValidException) {
+            responseCode = ResponseCodeEnum.CODE_600;
+            BindingResult bindingResult = ((MethodArgumentNotValidException) exception).getBindingResult();
+            Map<String, String> errors = new HashMap<>();
+            for (FieldError fieldError : bindingResult.getFieldErrors()) {
+                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+            }
+            extraMsg = errors.toString();
+            httpStatus = HttpStatus.BAD_REQUEST;
+            log.warn("参数校验异常: {}", extraMsg);
+        } else if (exception instanceof HttpMessageNotReadableException) {
+            responseCode = ResponseCodeEnum.CODE_600;
+            extraMsg = "请求体格式错误，请传入正确的JSON格式数据";
+            httpStatus = HttpStatus.BAD_REQUEST;
+            log.warn("请求体解析异常: {}", extraMsg);
+        } else if (exception instanceof RepeatSubmitException) {
+            responseCode = ResponseCodeEnum.CODE_429;
+            extraMsg = exception.getMessage();
+            httpStatus = HttpStatus.TOO_MANY_REQUESTS;
+            log.warn("重复提交异常: {}", extraMsg);
+        } else if (exception instanceof NoHandlerFoundException || exception instanceof NoResourceFoundException) {
+            responseCode = ResponseCodeEnum.CODE_404;
+            httpStatus = HttpStatus.NOT_FOUND;
+            // 404不打印堆栈，仅警告
+            log.warn("资源未找到: {}", request.getRequestURI());
+        } else if (exception instanceof DuplicateKeyException) {
+            responseCode = ResponseCodeEnum.CODE_601;
+            log.warn("数据库主键冲突: {}", exception.getMessage());
+        } else {
+            responseCode = ResponseCodeEnum.CODE_500;
+            httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+            // 真正的未知异常才打印堆栈
+            log.error("系统未知异常，请求地址{},错误信息:", request.getRequestURL(), exception);
         }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        String finalMsg = extraMsg != null ? extraMsg : responseCode.getMsg();
+        return buildResponse(responseCode.getCode(), finalMsg, httpStatus);
+    }
+
+    private ResponseEntity<Object> buildResponse(Integer code, Object msg, int status) {
+        return ResponseEntity.status(status)
                 .body(MapUtil.<String, Object>builder()
-                        .put("code", HttpStatus.INTERNAL_SERVER_ERROR.value())
-                        .put("msg", ExceptionUtil.stacktraceToString(exception))
+                        .put("code", code)
+                        .put("msg", msg)
                         .build());
     }
 
+    private ResponseEntity<Object> buildResponse(Integer code, Object msg, HttpStatus status) {
+        return ResponseEntity.status(status)
+                .body(MapUtil.<String, Object>builder()
+                        .put("code", code)
+                        .put("msg", msg)
+                        .build());
+    }
 }

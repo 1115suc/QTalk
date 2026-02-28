@@ -1,7 +1,7 @@
 package course.QTalk.exception;
 
-import course.QTalk.enums.BaseEnum;
-import course.QTalk.enums.BaseExceptionEnum;
+import course.QTalk.pojo.enums.BaseEnum;
+import course.QTalk.pojo.enums.BaseExceptionEnum;
 import lombok.Data;
 
 /**

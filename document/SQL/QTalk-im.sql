@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS `qt_group`;
 CREATE TABLE `qt_group`
 (
     `id`            bigint(20)  NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-    `group_id`      varchar(32) NOT NULL COMMENT '群组公开ID（业务主键）',
+    `group_id`      varchar(11) NOT NULL COMMENT '群组公开ID（业务主键）',
     `name`          varchar(64) NOT NULL COMMENT '群组名称',
     `avatar`        varchar(255)         DEFAULT NULL COMMENT '群组头像URL',
     `owner_uid`     varchar(50) NOT NULL COMMENT '群主UID（关联sys_user.uid）',
@@ -10,6 +10,7 @@ CREATE TABLE `qt_group`
     `max_count`     int(11)     NOT NULL DEFAULT '200' COMMENT '最大成员数',
     `current_count` int(11)     NOT NULL DEFAULT '1' COMMENT '当前成员数',
     `allow_invite`  tinyint(1)  NOT NULL DEFAULT '1' COMMENT '是否允许普通成员邀请(0:否, 1:是)',
+    `join_type`     tinyint(4)  NOT NULL DEFAULT '0' COMMENT '入群方式(0:同意后加入, 1:直接加入, 2:邀请加入, 3:拒绝任何人加入)',
     `status`        tinyint(4)  NOT NULL DEFAULT '0' COMMENT '群组状态(0:正常, 1:解散, 2:封禁)',
     `create_time`   datetime    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`   datetime    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -25,8 +26,8 @@ DROP TABLE IF EXISTS `qt_group_member`;
 CREATE TABLE `qt_group_member`
 (
     `id`            bigint(20)  NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-    `group_id`      varchar(32) NOT NULL COMMENT '群组ID',
-    `user_uid`      varchar(50) NOT NULL COMMENT '用户UID',
+    `group_id`      varchar(11) NOT NULL COMMENT '群组ID',
+    `user_uid`      varchar(11) NOT NULL COMMENT '用户UID',
     `role`          tinyint(4)  NOT NULL DEFAULT '1' COMMENT '角色(1:普通成员, 2:管理员, 3:群主)',
     `alias`         varchar(64)          DEFAULT NULL COMMENT '群内昵称',
     `is_top`        tinyint(1)  NOT NULL DEFAULT '0' COMMENT '是否置顶(0:否, 1:是)',
@@ -48,8 +49,8 @@ DROP TABLE IF EXISTS `qt_friend`;
 CREATE TABLE `qt_friend`
 (
     `id`          bigint(20)  NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-    `user_uid`    varchar(50) NOT NULL COMMENT '用户UID',
-    `friend_uid`  varchar(50) NOT NULL COMMENT '好友UID',
+    `user_uid`    varchar(11) NOT NULL COMMENT '用户UID',
+    `friend_uid`  varchar(11) NOT NULL COMMENT '好友UID',
     `remark`      varchar(64)          DEFAULT NULL COMMENT '好友备注',
     `source`      tinyint(4)  NOT NULL DEFAULT '1' COMMENT '来源(1:搜索, 2:群聊, 3:名片, 4:扫码)',
     `status`      tinyint(4)  NOT NULL DEFAULT '0' COMMENT '状态(0:正常, 1:删除, 2:拉黑)',
@@ -65,8 +66,8 @@ DROP TABLE IF EXISTS `qt_contact_request`;
 CREATE TABLE `qt_contact_request`
 (
     `id`          bigint(20)  NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-    `from_uid`    varchar(50) NOT NULL COMMENT '发送方UID',
-    `to_id`       varchar(50) NOT NULL COMMENT '接收方ID',
+    `from_uid`    varchar(11) NOT NULL COMMENT '发送方UID',
+    `to_id`       varchar(11) NOT NULL COMMENT '接收方ID',
     `to_type`     tinyint(4)  NOT NULL DEFAULT '1' COMMENT '接收方类型(1:用户, 2:群组)',
     `contact_id`  varchar(32)          DEFAULT NULL COMMENT '联系人ID（用户：好友UID，群组：群主和管理员的UID）',
     `reason`      varchar(128)         DEFAULT NULL COMMENT '申请理由',

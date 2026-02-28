@@ -2,6 +2,8 @@ package course.QTalk.service;
 
 import course.QTalk.pojo.po.QtGroup;
 import com.baomidou.mybatisplus.extension.service.IService;
+import course.QTalk.pojo.vo.request.CreatGroupVO;
+import course.QTalk.pojo.vo.response.R;
 
 /**
 * @author 32147
@@ -10,4 +12,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface QtGroupService extends IService<QtGroup> {
 
+    R createGroup(String token, Integer type, CreatGroupVO creatGroupVO);
 }

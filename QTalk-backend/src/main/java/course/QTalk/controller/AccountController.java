@@ -1,5 +1,6 @@
 package course.QTalk.controller;
 
+import cn.hutool.core.convert.Convert;
 import course.QTalk.pojo.vo.request.*;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,12 +87,13 @@ public class AccountController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.QUERY)
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
     @DeleteMapping()
     public R logout(@NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
-                    @NotNull(message = "登录方式不能为空") Integer LoginType) {
-        return sysUserService.logout(token, LoginType);
+                    @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String LoginType) {
+        Integer loginType = Convert.toInt(LoginType);
+        return sysUserService.logout(token, loginType);
     }
 
     @Operation(
@@ -102,13 +103,14 @@ public class AccountController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.QUERY),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "resetVo", description = "重置密码信息", required = true)
     })
     @PutMapping()
     public R resetPassword(@NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
-                           @RequestBody ResetPasswordVO resetVo,
-                           @NotNull(message = "登录方式不能为空") Integer LoginType) {
-        return sysUserService.resetPassword(token, LoginType, resetVo);
+                           @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String LoginType,
+                           @RequestBody ResetPasswordVO resetVo) {
+        Integer loginType = Convert.toInt(LoginType);
+        return sysUserService.resetPassword(token, loginType, resetVo);
     }
 }

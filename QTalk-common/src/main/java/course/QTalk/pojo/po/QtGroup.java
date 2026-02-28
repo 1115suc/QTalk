@@ -1,10 +1,10 @@
 package course.QTalk.pojo.po;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.util.Date;
+
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -12,12 +12,13 @@ import lombok.Data;
  * @TableName qt_group
  */
 @TableName(value ="qt_group")
+@Builder
 @Data
 public class QtGroup {
     /**
      * 自增主键
      */
-    @TableId(type = IdType.AUTO)
+    @TableId
     private Long id;
 
     /**
@@ -61,6 +62,11 @@ public class QtGroup {
     private Integer allowInvite;
 
     /**
+     * 入群方式(0:同意后加入, 1:直接加入, 2:邀请加入, 3:拒绝任何人加入)
+     */
+    private Integer joinType;
+
+    /**
      * 群组状态(0:正常, 1:解散, 2:封禁)
      */
     private Integer status;
@@ -78,6 +84,7 @@ public class QtGroup {
     /**
      * 乐观锁版本号
      */
+    @Version
     private Integer version;
 
     /**

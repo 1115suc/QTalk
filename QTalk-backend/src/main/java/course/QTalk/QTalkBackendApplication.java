@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableAspectJAutoProxy
 @EnableTransactionManagement
 @MapperScan("course.QTalk.mapper")
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"course.QTalk"})
 public class QTalkBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(QTalkBackendApplication.class, args);

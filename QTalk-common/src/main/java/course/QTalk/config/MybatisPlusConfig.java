@@ -3,6 +3,7 @@ package course.QTalk.config;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,8 @@ public class MybatisPlusConfig {
         mybatisPlusInterceptor.addInnerInterceptor(new PaginationInnerInterceptor());
         //防全表更新与删除插件
         mybatisPlusInterceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
+        //乐观锁插件
+        mybatisPlusInterceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         return mybatisPlusInterceptor;
     }
 }
