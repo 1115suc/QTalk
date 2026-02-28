@@ -1,0 +1,8 @@
+minio:
+  endpoint: ${minio.url}
+  access-key: ${minio.accessKey}
+  secret-key: ${minio.secretKey}
+  bucket-name: ${minio.bucketName}
+  connect-timeout: 10000
+  write-timeout: 60000
+  read-timeout: 60000

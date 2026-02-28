@@ -19,9 +19,9 @@ public class SysUser {
     private Long id;
 
     /**
-     * 账户
+     * 用户id
      */
-    private String username;
+    private String uid;
 
     /**
      * 用户密码密文

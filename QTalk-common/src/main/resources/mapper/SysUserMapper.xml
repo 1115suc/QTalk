@@ -6,7 +6,7 @@
 
     <resultMap id="BaseResultMap" type="course.QTalk.pojo.po.SysUser">
             <id property="id" column="id" />
-            <result property="username" column="username" />
+            <result property="uid" column="uid" />
             <result property="password" column="password" />
             <result property="phone" column="phone" />
             <result property="realName" column="real_name" />
@@ -28,7 +28,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,username,password,phone,real_name,nick_name,
+        id,uid,password,phone,real_name,nick_name,
         email,avatar,description,birthday,add_friends,
         last_login_time,area_name,area_code,sex,status,
         deleted,create_where,create_time,update_time

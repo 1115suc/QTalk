@@ -14,16 +14,42 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    /**
+     * 处理 MethodArgumentNotValidException (Spring Boot 参数校验失败)
+     *
+     * @param exception 参数校验异常
+     * @return 响应数据
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+        log.error("参数校验失败异常 -> ", exception); // 总是打印日志
+        BindingResult bindingResult = exception.getBindingResult();
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError fieldError : bindingResult.getFieldErrors()) {
+            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(MapUtil.<String, Object>builder()
+                        .put("code", HttpStatus.BAD_REQUEST.value())
+                        .put("msg", errors) // 返回具体的字段错误信息
+                        .build());
+    }
 
     /**
      * 请求体解析异常处理
@@ -34,9 +60,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Object> handle(HttpMessageNotReadableException exception) {
-        if (ObjectUtil.isNotEmpty(exception.getCause())) {
-            log.error("请求体解析异常 -> ", exception);
-        }
+        log.error("请求体解析异常 -> ", exception); // 总是打印日志
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(MapUtil.<String, Object>builder()
                         .put("code", HttpStatus.BAD_REQUEST.value())
@@ -91,6 +115,7 @@ public class GlobalExceptionHandler {
     /**
      * web自定义异常处理
      * 用于统一封装VO对象返回前端
+     *
      * @param exception web自定义异常
      * @return 响应数据
      */
@@ -101,9 +126,9 @@ public class GlobalExceptionHandler {
         }
         JSONObject jsonObject = JSONUtil.parseObj(exception);
         return ResponseEntity.ok(MapUtil.<String, Object>builder()
-                        .put("code", exception.getCode())
-                        .put("msg", jsonObject.getStr("msg"))
-                        .build());
+                .put("code", exception.getCode())
+                .put("msg", jsonObject.getStr("msg"))
+                .build());
     }
 
     /**

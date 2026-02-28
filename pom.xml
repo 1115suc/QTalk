@@ -20,6 +20,7 @@
         <module>QTalk-common</module>
         <module>QTalk-backend</module>
         <module>QTalk-admin</module>
+        <module>QTalk-Minio</module>
     </modules>
 
     <properties>
@@ -159,6 +160,13 @@
                 <artifactId>lombok</artifactId>
                 <optional>true</optional>
                 <version>${lombok.version}</version>
+            </dependency>
+
+            <!--jjwt-->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
