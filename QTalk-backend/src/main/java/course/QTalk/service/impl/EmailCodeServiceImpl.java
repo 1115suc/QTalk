@@ -6,7 +6,7 @@ import course.QTalk.constant.TimeConstant;
 import course.QTalk.exception.QTWebException;
 import course.QTalk.pojo.vo.request.EmailCheckCodeVO;
 import course.QTalk.pojo.vo.response.R;
-import course.QTalk.pojo.vo.response.ResponseCode;
+import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.properties.EmailConfigProperties;
 import course.QTalk.service.EmailCodeService;
 import course.QTalk.util.RedisUtil;

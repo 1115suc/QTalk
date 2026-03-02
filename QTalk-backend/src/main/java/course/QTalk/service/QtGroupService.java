@@ -3,7 +3,10 @@ package course.QTalk.service;
 import course.QTalk.pojo.po.QtGroup;
 import com.baomidou.mybatisplus.extension.service.IService;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
+import course.QTalk.pojo.vo.response.MyGroupVO;
 import course.QTalk.pojo.vo.response.R;
+
+import java.util.List;
 
 /**
 * @author 32147
@@ -13,4 +16,6 @@ import course.QTalk.pojo.vo.response.R;
 public interface QtGroupService extends IService<QtGroup> {
 
     R createGroup(String token, Integer type, CreatGroupVO creatGroupVO);
+
+    R<List<MyGroupVO>> queryMyGroups(String token, Integer type);
 }

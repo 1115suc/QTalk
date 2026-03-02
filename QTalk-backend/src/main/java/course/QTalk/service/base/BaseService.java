@@ -2,7 +2,7 @@ package course.QTalk.service.base;
 
 import course.QTalk.constant.RedisConstant;
 import course.QTalk.exception.QTWebException;
-import course.QTalk.pojo.vo.response.ResponseCode;
+import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.util.RedisUtil;
 import jodd.util.StringUtil;
 

@@ -5,7 +5,7 @@ import course.QTalk.annotation.VerificationInterceptor;
 import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
-import course.QTalk.pojo.vo.response.ResponseCode;
+import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.util.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class VerificationOptionalAspect {
 
     private final RedisUtil redisUtil;
 
-    @Before("@within(course.QTalk.annotation.VerificationInterceptor) || @annotation(course.QTalk.annotation.VerificationInterceptor)")
+    @Before("@annotation(course.QTalk.annotation.VerificationInterceptor)")
     public void interceptorDo(JoinPoint point) {
         try{
             Method method = ((MethodSignature) point.getSignature()).getMethod();

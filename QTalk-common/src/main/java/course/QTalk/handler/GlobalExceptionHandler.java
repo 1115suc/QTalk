@@ -5,7 +5,7 @@ import cn.hutool.core.util.ObjectUtil;
 import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
 import course.QTalk.exception.RepeatSubmitException;
-import course.QTalk.pojo.enums.ResponseCodeEnum;
+import course.QTalk.pojo.enums.ResponseCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -65,8 +65,8 @@ public class GlobalExceptionHandler {
                     .map(ConstraintViolation::getMessage).collect(Collectors.toList());
         }
         log.error("参数校验失败异常 -> ", exception);
-        String msg = errors.isEmpty() ? ResponseCodeEnum.CODE_600.getMsg() : errors.toString();
-        return buildResponse(ResponseCodeEnum.CODE_600.getCode(), msg, HttpStatus.BAD_REQUEST);
+        String msg = errors.isEmpty() ? ResponseCode.CODE_600.getMessage() : errors.toString();
+        return buildResponse(ResponseCode.CODE_600.getCode(), msg, HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -76,12 +76,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handle(Exception exception, HttpServletRequest request) {
         log.error("请求错误，请求地址{},错误信息:", request.getRequestURL(), exception);
 
-        ResponseCodeEnum responseCode;
+        ResponseCode responseCode;
         String extraMsg = null;
         HttpStatus httpStatus = HttpStatus.OK;
 
         if (exception instanceof MethodArgumentNotValidException) {
-            responseCode = ResponseCodeEnum.CODE_600;
+            responseCode = ResponseCode.CODE_600;
             BindingResult bindingResult = ((MethodArgumentNotValidException) exception).getBindingResult();
             Map<String, String> errors = new HashMap<>();
             for (FieldError fieldError : bindingResult.getFieldErrors()) {
@@ -91,31 +91,31 @@ public class GlobalExceptionHandler {
             httpStatus = HttpStatus.BAD_REQUEST;
             log.warn("参数校验异常: {}", extraMsg);
         } else if (exception instanceof HttpMessageNotReadableException) {
-            responseCode = ResponseCodeEnum.CODE_600;
+            responseCode = ResponseCode.CODE_600;
             extraMsg = "请求体格式错误，请传入正确的JSON格式数据";
             httpStatus = HttpStatus.BAD_REQUEST;
             log.warn("请求体解析异常: {}", extraMsg);
         } else if (exception instanceof RepeatSubmitException) {
-            responseCode = ResponseCodeEnum.CODE_429;
+            responseCode = ResponseCode.CODE_429;
             extraMsg = exception.getMessage();
             httpStatus = HttpStatus.TOO_MANY_REQUESTS;
             log.warn("重复提交异常: {}", extraMsg);
         } else if (exception instanceof NoHandlerFoundException || exception instanceof NoResourceFoundException) {
-            responseCode = ResponseCodeEnum.CODE_404;
+            responseCode = ResponseCode.CODE_404;
             httpStatus = HttpStatus.NOT_FOUND;
             // 404不打印堆栈，仅警告
             log.warn("资源未找到: {}", request.getRequestURI());
         } else if (exception instanceof DuplicateKeyException) {
-            responseCode = ResponseCodeEnum.CODE_601;
+            responseCode = ResponseCode.CODE_601;
             log.warn("数据库主键冲突: {}", exception.getMessage());
         } else {
-            responseCode = ResponseCodeEnum.CODE_500;
+            responseCode = ResponseCode.CODE_500;
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
             // 真正的未知异常才打印堆栈
             log.error("系统未知异常，请求地址{},错误信息:", request.getRequestURL(), exception);
         }
 
-        String finalMsg = extraMsg != null ? extraMsg : responseCode.getMsg();
+        String finalMsg = extraMsg != null ? extraMsg : responseCode.getMessage();
         return buildResponse(responseCode.getCode(), finalMsg, httpStatus);
     }
 

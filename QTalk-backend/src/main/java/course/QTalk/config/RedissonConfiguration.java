@@ -1,6 +1,5 @@
 package course.QTalk.config;
 
-import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import org.redisson.Redisson;
@@ -23,7 +22,7 @@ public class RedissonConfiguration {
         SingleServerConfig serverConfig = config.useSingleServer()
                 .setAddress("redis://" + redisProperties.getHost() + ":" + redisProperties.getPort());
         if (null != (redisProperties.getTimeout())) {
-            serverConfig.setTimeout(1000 * Convert.toInt(redisProperties.getTimeout().getSeconds()));
+            serverConfig.setTimeout(1000 * (int) redisProperties.getTimeout().getSeconds());
         }
         if (StrUtil.isNotEmpty(redisProperties.getPassword())) {
             serverConfig.setPassword(redisProperties.getPassword());

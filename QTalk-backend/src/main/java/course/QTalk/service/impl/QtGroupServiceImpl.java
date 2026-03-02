@@ -1,9 +1,10 @@
 package course.QTalk.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.CommonConstant;
 import course.QTalk.constant.MinIOConstant;
@@ -20,8 +21,9 @@ import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.pojo.po.QtGroup;
 import course.QTalk.pojo.po.QtGroupMember;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
+import course.QTalk.pojo.vo.response.MyGroupVO;
 import course.QTalk.pojo.vo.response.R;
-import course.QTalk.pojo.vo.response.ResponseCode;
+import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.service.QtGroupService;
 import course.QTalk.mapper.QtGroupMapper;
 import course.QTalk.util.RedisUtil;
@@ -33,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author 32147
@@ -52,12 +56,17 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
     private final QtGroupMapper qtGroupMapper;
     private final QtGroupMemberMapper qtGroupMemberMapper;
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public R createGroup(String token, Integer type, CreatGroupVO creatGroupVO) {
+    private TokenUserDTO getTokenUserDTO(String token, Integer type) {
         String loginPrefix = LoginTypeEnum.of(type).getPrefix();
         String tokenLoginInfo = (String) redisUtil.get(loginPrefix + token);
         TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
+        return tokenUserDTO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R createGroup(String token, Integer type, CreatGroupVO creatGroupVO) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
 
         String groupId = "Q" + RandomUtil.randomNumbers(9);
         String imgPath = null;
@@ -82,7 +91,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
 
         QtGroup qtGroup = QtGroup.builder()
                 .groupId(groupId)
-                .name(creatGroupVO.getName())
+                .name(creatGroupVO.getGroupName())
                 .avatar(imgPath)
                 .ownerUid(tokenUserDTO.getUid())
                 .notice(creatGroupVO.getNotice())
@@ -113,6 +122,35 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         // TODO 发送消息
 
         return R.ok(ResponseCode.GROUP_CREATE_SUCCESS.getMessage());
+    }
+
+    @Override
+    public R<List<MyGroupVO>> queryMyGroups(String token, Integer type) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+
+        String uid = tokenUserDTO.getUid();
+        LambdaQueryWrapper<QtGroupMember> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(QtGroupMember::getUserUid, uid);
+        queryWrapper.eq(QtGroupMember::getIsQuit, CommonConstant.ZERO);
+        List<QtGroupMember> qtGroupMembers = qtGroupMemberMapper.selectList(queryWrapper);
+
+        if (CollectionUtil.isNotEmpty(qtGroupMembers)) {
+            List<MyGroupVO> myGroupVOList = qtGroupMembers.stream().map(qtGroupMember -> {
+                LambdaQueryWrapper<QtGroup> groupQuery = new LambdaQueryWrapper<>();
+                groupQuery.eq(QtGroup::getGroupId, qtGroupMember.getGroupId());
+                QtGroup qtGroup = qtGroupMapper.selectOne(groupQuery);
+
+                MyGroupVO myGroupVO = new MyGroupVO();
+                myGroupVO.setGroupId(qtGroup.getGroupId());
+                myGroupVO.setGroupName(qtGroup.getName());
+                myGroupVO.setGroupAvatar(qtGroup.getAvatar());
+                myGroupVO.setRole(qtGroupMember.getRole());
+                return myGroupVO;
+            }).collect(Collectors.toList());
+            return R.ok(myGroupVOList);
+        }
+
+        return R.ok(ResponseCode.GROUP_LIST_EMPTY.getMessage());
     }
 }
 

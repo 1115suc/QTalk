@@ -1,6 +1,7 @@
 package course.QTalk.pojo.vo.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import course.QTalk.pojo.enums.ResponseCode;
 
 import java.io.Serializable;
 

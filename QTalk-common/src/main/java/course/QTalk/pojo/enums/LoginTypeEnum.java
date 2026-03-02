@@ -2,7 +2,6 @@ package course.QTalk.pojo.enums;
 
 import course.QTalk.constant.RedisConstant;
 import course.QTalk.exception.QTWebException;
-import course.QTalk.pojo.vo.response.ResponseCode;
 
 import java.util.Arrays;
 import java.util.Map;

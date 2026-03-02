@@ -17,4 +17,6 @@ public class RedisConstant {
     public static final String ANDROID_LOGIN = TOKEN + "AndroidLogin:";
     // IOS登录
     public static final String IOS_LOGIN = TOKEN + "IOSLogin:";
+    // 幂等性Key
+    public static final String IDEMPOTENT_KEY = PROJECT_NAME + "Idempotent:";
 }

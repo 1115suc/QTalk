@@ -14,7 +14,7 @@ public class EmailCodeLoginVO {
     @NotBlank(message = "邮箱地址不能为空")
     @Schema(description = "用户邮箱地址")
     private String email;
-    
+
     // 邮箱验证码
     @NotBlank(message = "邮箱验证码不能为空")
     @Schema(description = "邮箱验证码")
@@ -22,8 +22,8 @@ public class EmailCodeLoginVO {
 
     // 登录位置来源
     @NotNull(message = "登录方式不能为空")
-    @Min(value = 1, message = "登录方式错误")
-    @Max(value = 3, message = "登录方式错误")
+    @Min(value = 1, message = "登录来源错误")
+    @Max(value = 3, message = "登录来源错误")
     @Schema(description = "登录方式(1.Web 2.Android 3.ios)")
     private Integer loginWhere;
 }

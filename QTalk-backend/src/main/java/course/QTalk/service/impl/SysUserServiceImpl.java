@@ -23,7 +23,7 @@ import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
-import course.QTalk.pojo.vo.response.ResponseCode;
+import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.pojo.vo.response.UserLoginVO;
 import course.QTalk.service.EmailCodeService;
 import course.QTalk.service.SysUserService;

@@ -1,14 +1,10 @@
 package course.QTalk.pojo.vo.request;
 
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Encoding;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
@@ -16,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class CreatGroupVO {
     @Schema(description = "群聊名称")
     @NotBlank(message = "群聊名称不能为空")
-    private String name;
+    private String groupName;
 
     @Schema(description = "群聊公告")
     private String notice;
@@ -31,9 +27,6 @@ public class CreatGroupVO {
     @Max(value = 3, message = "入群方式参数错误")
     private Integer joinType;
 
-    @Schema(description = "群聊头像")
-    @Parameter(description = "群聊头像文件",
-            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                    encoding = @Encoding(name = "avatar", contentType = "image/jpeg, image/png")))
+    @Schema(description = "群聊头像", type = "file", format = "binary")
     private MultipartFile avatar;
 }

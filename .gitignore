@@ -28,3 +28,5 @@ document/log
 QTalk-admin/target
 QTalk-backend/target
 QTalk-common/target
+
+*/src/main/resources/application-local.yml

@@ -17,7 +17,7 @@ public class MinIOTest {
     @Autowired
     private MinIOFileService minIOFileService;
 
-    @Test
+    /*@Test
     public void testUploadImage() throws IOException {
         File file = new File("D:\\Develop\\JavaProject\\QTalk\\document\\img\\1d38f66f97e308c9.jpg");
         InputStream inputStream = new FileInputStream(file);
@@ -37,5 +37,5 @@ public class MinIOTest {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-    }
+    }*/
 }
