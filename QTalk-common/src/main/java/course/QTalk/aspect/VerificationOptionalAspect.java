@@ -1,6 +1,8 @@
 package course.QTalk.aspect;
 
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
 import course.QTalk.annotation.VerificationInterceptor;
 import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.exception.QTException;
@@ -55,7 +57,11 @@ public class VerificationOptionalAspect {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
         String token = request.getHeader("Authorization");
-        Integer loginType = Convert.toInt(request.getHeader("LoginType"));
+        String type = request.getHeader("LoginType");
+        if (StrUtil.isBlank(type)) {
+            throw new QTWebException(ResponseCode.LOGIN_FROM_ERROR.getMessage(), ResponseCode.LOGIN_FROM_ERROR.getCode());
+        }
+        Integer loginType = Convert.toInt(type);
         String redisPrefix = LoginTypeEnum.of(loginType).getPrefix();
         boolean hasKey = redisUtil.hasKey(redisPrefix + token);
         if (!hasKey) {

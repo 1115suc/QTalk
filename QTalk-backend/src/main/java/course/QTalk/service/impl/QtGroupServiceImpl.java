@@ -1,5 +1,6 @@
 package course.QTalk.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -21,6 +22,7 @@ import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.pojo.po.QtGroup;
 import course.QTalk.pojo.po.QtGroupMember;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
+import course.QTalk.pojo.vo.response.GroupInfoVO;
 import course.QTalk.pojo.vo.response.MyGroupVO;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
@@ -151,6 +153,22 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         }
 
         return R.ok(ResponseCode.GROUP_LIST_EMPTY.getMessage());
+    }
+
+    @Override
+    public R<GroupInfoVO> queryGroupInfo(String groupId) {
+        LambdaQueryWrapper<QtGroup> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(QtGroup::getGroupId, groupId);
+        QtGroup qtGroup = qtGroupMapper.selectOne(queryWrapper);
+
+        if (ObjectUtil.isNotNull(qtGroup)) {
+            GroupInfoVO groupInfoVO = new GroupInfoVO();
+            BeanUtil.copyProperties(qtGroup, groupInfoVO);
+
+            return R.ok(groupInfoVO);
+        }
+
+        return R.error(ResponseCode.GROUP_NOT_EXISTS.getCode(), ResponseCode.GROUP_NOT_EXISTS.getMessage());
     }
 }
 

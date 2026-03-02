@@ -28,6 +28,7 @@ public enum ResponseCode {
     DATA_ERROR(0, "参数异常"),
     NO_RESPONSE_DATA(0, "无响应数据"),
     SERVER_ERROR(500, "服务器返回错误，请联系管理员"),
+    DUPLICATE_REQUEST(429, "请求处理中，请勿重复提交"),
 
     // 注册
     REGISTER_ERROR(0, "注册失败"),
@@ -69,12 +70,12 @@ public enum ResponseCode {
 
     // 群组
     GROUP_AVATAR_UPLOAD_ERROR(0, "创建群聊失败，群聊头像上传失败"),
+    GROUP_NOT_EXISTS(0, "该群组不存在"),
 
     // 响应码枚举
     CODE_200(200, "请求成功"),
     CODE_404(404, "请求地址不存在"),
     CODE_429(429, "请求过于频繁，请稍后重试"),
-    DUPLICATE_REQUEST(429, "请求处理中，请勿重复提交"),
     CODE_600(600, "请求参数错误"),
     CODE_601(601, "信息已经存在"),
     CODE_602(602, "文件不存在"),
