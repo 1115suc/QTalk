@@ -2,14 +2,15 @@ package course.QTalk.service;
 
 import course.QTalk.pojo.po.SysUser;
 import com.baomidou.mybatisplus.extension.service.IService;
+import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
 import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
+import course.QTalk.pojo.vo.request.UserSearchVO;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
-import course.QTalk.pojo.vo.request.UserSearchVO;
 import course.QTalk.pojo.vo.response.UserLoginVO;
 import course.QTalk.pojo.vo.response.UserSearchInfoVO;
 
@@ -35,6 +36,8 @@ public interface SysUserService extends IService<SysUser> {
     R resetPassword(String token, Integer loginType, ResetPasswordVO resetVo);
     // 更新用户信息
     R updateUserInfo(String token, Integer loginType, UpdateUserInfoVO updateUserInfoVO);
+    // 申请加入群聊
+    void applyAddFriend(String token, Integer type, ApplyJoinContactVO applyJoinContactVO);
     // 搜索用户
     R<List<UserSearchInfoVO>> searchUser(UserSearchVO userSearchVO);
 }

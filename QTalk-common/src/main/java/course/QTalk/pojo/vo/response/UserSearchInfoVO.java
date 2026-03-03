@@ -20,7 +20,7 @@ public class UserSearchInfoVO {
 
     @Schema(description = "地区名称")
     private String areaName;
-    
+
     @Schema(description = "是否允许添加好友(0.同意后加好友 1.直接加好友 2.不允许加好友)")
     private Integer addFriends;
 }

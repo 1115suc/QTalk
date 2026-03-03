@@ -24,11 +24,13 @@ public enum ResponseCode {
 
     // 联系人
     CONTACT_NOT_EXISTS(200, "联系人不存在"),
+    APPLY_SUCCESS(200, "申请成功"),
 
     // ==================== 失败响应 ====================
 
     // 通用
     ERROR(0, "操作失败"),
+    PARAM_NOT_EMPTY(0, "请求参数不能为空"),
     DATA_ERROR(0, "参数异常"),
     NO_RESPONSE_DATA(0, "无响应数据"),
     SERVER_ERROR(500, "服务器返回错误，请联系管理员"),
@@ -76,7 +78,16 @@ public enum ResponseCode {
     GROUP_AVATAR_UPLOAD_ERROR(0, "创建群聊失败，群聊头像上传失败"),
     GROUP_NOT_EXISTS(0, "该群组不存在"),
     GROUP_ID_OR_NAME_EMPTY(0, "群组ID或名称不能为空"),
+    GROUP_ID_ERROR(0, "群组ID格式错误"),
     USER_NOT_IN_GROUP(0, "您不在该群组中"),
+
+    // 联系人
+    USER_ID_ERROR(0, "用户ID格式错误"),
+    ALREADY_FRIEND(0, "您已添加该联系人为好友"),
+    CONTACT_NOT_FRIEND(0, "您不是该联系人的好友"),
+    CONTACT_NOT_GROUP_MEMBER(0, "您不是该群组成员"),
+    CONTACT_NOT_IN_GROUP(0, "您不在该群组中"),
+    CONTACT_NOT_IN_GROUP_MEMBER(0, "您不在该群组成员中"),
 
     // 响应码枚举
     CODE_200(200, "请求成功"),

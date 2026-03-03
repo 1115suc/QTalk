@@ -1,7 +1,10 @@
 package course.QTalk.controller;
 
-
+import cn.hutool.core.convert.Convert;
 import course.QTalk.annotation.VerificationInterceptor;
+import course.QTalk.pojo.enums.ContactType;
+import course.QTalk.pojo.enums.ResponseCode;
+import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.GroupBasicInfoVO;
 import course.QTalk.pojo.vo.request.UserSearchVO;
 import course.QTalk.pojo.vo.response.GroupInfoVO;
@@ -28,7 +31,7 @@ import java.util.List;
 
 @Validated
 @RestController
-@RequestMapping("/group")
+@RequestMapping("/contact")
 @RequiredArgsConstructor
 @Tag(name = "联系人/群管理", description = "联系人/群相关接口，包括搜索联系人/群、申请加入群聊，好友申请等功能")
 public class UserContactController {
@@ -70,5 +73,33 @@ public class UserContactController {
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @NotNull(message = "群组基础信息不能为空") @RequestBody GroupBasicInfoVO groupBasicInfoVO) {
         return groupService.queryGroupInfo(groupBasicInfoVO);
+    }
+
+    @Operation(
+            summary = "申请加入群聊",
+            description = "用户申请加入群聊，需要提供群组ID和申请理由。",
+            method = "POST"
+    )
+    @Parameters({
+            @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+    })
+    @VerificationInterceptor(checkLogin = true)
+    @PostMapping("/applyJoinGroup")
+    public R applyJoinGroup(
+            @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
+            @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
+            @RequestBody ApplyJoinContactVO applyJoinContactVO) {
+        Integer type = Convert.toInt(loginType);
+
+        Integer applyType = applyJoinContactVO.getApplyType();
+        ContactType contactType = ContactType.getByCode(applyType);
+        switch (contactType) {
+            case USER -> sysUserService.applyAddFriend(token, type, applyJoinContactVO);
+            case GROUP -> groupService.applyJoinGroup(token, type, applyJoinContactVO);
+            default -> throw new RuntimeException("不支持的方式");
+        }
+
+        return R.ok(ResponseCode.APPLY_SUCCESS.getMessage());
     }
 }

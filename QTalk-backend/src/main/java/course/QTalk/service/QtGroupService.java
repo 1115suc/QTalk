@@ -2,6 +2,7 @@ package course.QTalk.service;
 
 import course.QTalk.pojo.po.QtGroup;
 import com.baomidou.mybatisplus.extension.service.IService;
+import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
 import course.QTalk.pojo.vo.request.GroupBasicInfoVO;
 import course.QTalk.pojo.vo.request.UpdateGroupInfoVO;
@@ -21,11 +22,13 @@ public interface QtGroupService extends IService<QtGroup> {
 
     R createGroup(String token, Integer type, CreatGroupVO creatGroupVO);
 
+    R updateGroupInfo(String token, Integer type, UpdateGroupInfoVO updateGroupInfoVO);
+
     R<List<MyGroupVO>> queryMyGroups(String token, Integer type);
 
     R<List<GroupInfoVO>> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO);
 
     R<GroupDetailInfoVO> getGroupDetailInfo(String token, Integer type, String groupId);
 
-    R updateGroupInfo(String token, Integer type, UpdateGroupInfoVO updateGroupInfoVO);
+    void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO);
 }

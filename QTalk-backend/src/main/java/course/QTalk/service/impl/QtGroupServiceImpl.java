@@ -12,17 +12,22 @@ import course.QTalk.constant.CommonConstant;
 import course.QTalk.constant.MinIOConstant;
 import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
+import course.QTalk.mapper.QtContactRequestMapper;
 import course.QTalk.mapper.QtGroupMemberMapper;
 import course.QTalk.minio.constant.MinioErrorConstant;
 import course.QTalk.minio.exception.MinioException;
 import course.QTalk.minio.model.FileUploadResponse;
 import course.QTalk.pojo.bo.GroupMemberInfoBO;
 import course.QTalk.pojo.dto.TokenUserDTO;
+import course.QTalk.pojo.enums.ApplyStatus;
+import course.QTalk.pojo.enums.ContactType;
 import course.QTalk.pojo.enums.GroupRole;
 import course.QTalk.pojo.enums.GroupStatus;
 import course.QTalk.pojo.enums.LoginTypeEnum;
+import course.QTalk.pojo.po.QtContactRequest;
 import course.QTalk.pojo.po.QtGroup;
 import course.QTalk.pojo.po.QtGroupMember;
+import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
 import course.QTalk.pojo.vo.request.GroupBasicInfoVO;
 import course.QTalk.pojo.vo.request.UpdateGroupInfoVO;
@@ -63,6 +68,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
     private final MinIOFileService minIOFileService;
     private final QtGroupMapper qtGroupMapper;
     private final QtGroupMemberMapper qtGroupMemberMapper;
+    private final QtContactRequestMapper qtContactRequestMapper;
 
     private TokenUserDTO getTokenUserDTO(String token, Integer type) {
         String loginPrefix = LoginTypeEnum.of(type).getPrefix();
@@ -313,6 +319,80 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
                 .build();
 
         return R.ok(groupDetailInfoVO);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+        String fromUid = tokenUserDTO.getUid();
+        String groupId = applyJoinContactVO.getApplyId();
+
+        String applyId = applyJoinContactVO.getApplyId();
+        if (!applyId.startsWith("Q")) {
+            throw new QTWebException(ResponseCode.GROUP_ID_ERROR.getMessage());
+        }
+
+        // 1. 校验群组是否存在且正常
+        LambdaQueryWrapper<QtGroup> groupQuery = new LambdaQueryWrapper<>();
+        groupQuery.eq(QtGroup::getGroupId, groupId);
+        groupQuery.eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode());
+        QtGroup qtGroup = qtGroupMapper.selectOne(groupQuery);
+        if (ObjectUtil.isNull(qtGroup)) {
+            throw new QTWebException(ResponseCode.GROUP_NOT_EXISTS.getMessage());
+        }
+
+        // 2. 校验入群方式
+        Integer joinType = qtGroup.getJoinType();
+
+        // 同意后加入
+        if (joinType.equals(CommonConstant.ZERO)) { // 2:需要群主或管理员同意
+            // 校验是否已经在群组中
+            LambdaQueryWrapper<QtGroupMember> memberQuery = new LambdaQueryWrapper<>();
+            memberQuery.eq(QtGroupMember::getGroupId, groupId);
+            memberQuery.eq(QtGroupMember::getUserUid, fromUid);
+            memberQuery.eq(QtGroupMember::getIsQuit, CommonConstant.ZERO);
+            Long memberCount = qtGroupMemberMapper.selectCount(memberQuery);
+            if (memberCount > 0) {
+                throw new QTWebException("您已在该群组中");
+            }
+
+            // 检查是否已经申请过且未处理
+            LambdaQueryWrapper<QtContactRequest> requestQuery = new LambdaQueryWrapper<>();
+            requestQuery.eq(QtContactRequest::getFromUid, fromUid);
+            requestQuery.eq(QtContactRequest::getToId, groupId);
+            requestQuery.eq(QtContactRequest::getToType, ContactType.GROUP.getCode());
+            requestQuery.eq(QtContactRequest::getStatus, ApplyStatus.PENDING.getCode());
+            Long count = qtContactRequestMapper.selectCount(requestQuery);
+            if (count > 0) {
+                throw new QTWebException(ResponseCode.DUPLICATE_REQUEST.getMessage());
+            }
+
+            // 构造申请理由
+            String reason = applyJoinContactVO.getApplyReason();
+            if (StrUtil.isBlank(reason)) {
+                reason = String.format(CommonConstant.APPLY_REASON_TEMPLATE, tokenUserDTO.getNickname());
+            }
+
+            // 插入申请记录
+            // 群组申请，contactId设置为群主ID（简化处理，后续可扩展为通知所有管理员）
+            QtContactRequest contactRequest = new QtContactRequest();
+            contactRequest.setFromUid(fromUid);
+            contactRequest.setToId(groupId);
+            contactRequest.setToType(ContactType.GROUP.getCode());
+            contactRequest.setContactId(qtGroup.getOwnerUid());
+            contactRequest.setReason(reason);
+            contactRequest.setStatus(ApplyStatus.PENDING.getCode());
+            contactRequest.setCreateTime(new Date());
+
+            qtContactRequestMapper.insert(contactRequest);
+        }
+
+        if (joinType.equals(CommonConstant.THREE)) { // 3:拒绝任何人加入
+            throw new QTWebException("该群组拒绝任何人加入");
+        }
+
+        // TODO 直接加入实现
     }
 
 }
