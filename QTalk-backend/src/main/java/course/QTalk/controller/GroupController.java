@@ -4,6 +4,9 @@ import cn.hutool.core.convert.Convert;
 import course.QTalk.annotation.Idempotent;
 import course.QTalk.annotation.VerificationInterceptor;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
+import course.QTalk.pojo.vo.request.GroupBasicInfoVO;
+import course.QTalk.pojo.vo.request.UpdateGroupInfoVO;
+import course.QTalk.pojo.vo.response.GroupDetailInfoVO;
 import course.QTalk.pojo.vo.response.GroupInfoVO;
 import course.QTalk.pojo.vo.response.MyGroupVO;
 import course.QTalk.pojo.vo.response.R;
@@ -12,9 +15,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +42,6 @@ public class GroupController {
             @Parameter(name = "X-Request-Id", description = "幂等键", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "creatGroupVO", description = "群聊信息表单", required = true)
     })
     @VerificationInterceptor(checkLogin = true)
     @Idempotent(expire = 10, message = "群组创建中，请勿重复提交")
@@ -48,11 +50,31 @@ public class GroupController {
             @NotBlank(message = "X-Request-Id不能为空") @RequestHeader("X-Request-Id") String requestId,
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
-            @Parameter(content = @Content(mediaType = "multipart/form-data")) @ModelAttribute CreatGroupVO creatGroupVO
+            @ModelAttribute CreatGroupVO creatGroupVO
     ) {
         Integer type = Convert.toInt(loginType);
 
         return groupService.createGroup(token, type, creatGroupVO);
+    }
+
+    @Operation(
+            summary = "更新群组信息",
+            description = "更新群组的详细信息，包括群聊名称、头像、公告、入群方式等。只有群主和管理员有权限操作。",
+            method = "PUT"
+    )
+    @Parameters({
+            @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+    })
+    @VerificationInterceptor(checkLogin = true)
+    @PutMapping
+    public R updateGroupInfo(
+            @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
+            @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
+            @ModelAttribute UpdateGroupInfoVO updateGroupInfoVO
+    ) {
+        Integer type = Convert.toInt(loginType);
+        return groupService.updateGroupInfo(token, type, updateGroupInfoVO);
     }
 
     @Operation(
@@ -75,9 +97,26 @@ public class GroupController {
         return groupService.queryMyGroups(token, type);
     }
 
-    // 查询群组信息
     @Operation(
             summary = "查询群组信息",
+            description = "根据群组ID查询群组的详细信息，包括群聊名称、公告、成员数量、创建时间等,用于搜索加入群聊。",
+            method = "POST"
+    )
+    @Parameters({
+            @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+    })
+    @VerificationInterceptor(checkLogin = true)
+    @PostMapping("/queryGroupInfo")
+    public R<GroupInfoVO> queryGroupInfo(
+            @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
+            @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
+            @NotNull(message = "群组基础信息不能为空") @RequestBody GroupBasicInfoVO groupBasicInfoVO) {
+        return groupService.queryGroupInfo(groupBasicInfoVO);
+    }
+
+    @Operation(
+            summary = "获取所在群详细信息",
             description = "根据群组ID查询群组的详细信息，包括群聊名称、公告、成员数量、创建时间等。",
             method = "GET"
     )
@@ -88,10 +127,11 @@ public class GroupController {
     })
     @VerificationInterceptor(checkLogin = true)
     @GetMapping("/{groupId}")
-    public R<GroupInfoVO> queryGroupInfo(
+    public R<GroupDetailInfoVO> getGroupDetailInfo(
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
-            @NotBlank(message = "群组Id不能为空") @PathVariable String groupId) {
-        return groupService.queryGroupInfo(groupId);
+            @NotBlank(message = "群组ID不能为空") @PathVariable String groupId) {
+        Integer type = Convert.toInt(loginType);
+        return groupService.getGroupDetailInfo(token, type, groupId);
     }
 }

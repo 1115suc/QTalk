@@ -6,6 +6,7 @@ import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
+import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.vo.response.UserLoginVO;
@@ -28,4 +29,6 @@ public interface SysUserService extends IService<SysUser> {
     R logout(String token, Integer loginType);
     // 重置密码
     R resetPassword(String token, Integer loginType, ResetPasswordVO resetVo);
+    // 更新用户信息
+    R updateUserInfo(String token, Integer loginType, UpdateUserInfoVO updateUserInfoVO);
 }

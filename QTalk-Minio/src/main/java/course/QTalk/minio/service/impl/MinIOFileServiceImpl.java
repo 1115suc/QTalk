@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * MinIO文件服务
  */
 @Slf4j
-@Service()
+@Service
 @RequiredArgsConstructor
 public class MinIOFileServiceImpl implements MinIOFileService {
 

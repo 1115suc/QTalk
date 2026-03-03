@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/account")
 @RequiredArgsConstructor
-@Tag(name = "用户管理", description = "用户相关接口，包括验证码获取、用户注册、登录等功能")
+@Tag(name = "账号管理", description = "账号相关接口，包括验证码获取、账号注册、登录等功能")
 public class AccountController {
     private static final Logger log = LoggerFactory.getLogger(AccountController.class);
     private final SysUserService sysUserService;
@@ -104,7 +104,6 @@ public class AccountController {
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "resetVo", description = "重置密码信息", required = true)
     })
     @PutMapping()
     public R resetPassword(@NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,

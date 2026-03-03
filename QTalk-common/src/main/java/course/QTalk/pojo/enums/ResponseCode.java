@@ -20,6 +20,7 @@ public enum ResponseCode {
     // 群组
     GROUP_CREATE_SUCCESS(200, "创建群聊成功"),
     GROUP_LIST_EMPTY(200, "群组列表为空"),
+    GROUP_UPDATE_SUCCESS(200, "群组信息更新成功"),
 
     // ==================== 失败响应 ====================
 
@@ -71,6 +72,8 @@ public enum ResponseCode {
     // 群组
     GROUP_AVATAR_UPLOAD_ERROR(0, "创建群聊失败，群聊头像上传失败"),
     GROUP_NOT_EXISTS(0, "该群组不存在"),
+    GROUP_ID_OR_NAME_EMPTY(0, "群组ID或名称不能为空"),
+    USER_NOT_IN_GROUP(0, "您不在该群组中"),
 
     // 响应码枚举
     CODE_200(200, "请求成功"),

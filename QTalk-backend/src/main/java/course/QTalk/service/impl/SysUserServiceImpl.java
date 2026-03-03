@@ -21,6 +21,7 @@ import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
+import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
@@ -254,6 +255,55 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
             return R.ok(ResponseCode.RESET_PASSWORD_SUCCESS.getMessage());
         } catch (Exception e) {
             log.error("获取用户token信息失败:{}, 登录方式:{}", e.getMessage(), loginType);
+            throw new QTWebException(ResponseCode.ERROR.getMessage());
+        }
+    }
+
+    @Override
+    public R updateUserInfo(String token, Integer loginType, UpdateUserInfoVO updateUserInfoVO) {
+        String redisPrefix = LoginTypeEnum.of(loginType).getPrefix();
+        try {
+            Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
+            TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
+
+            // 获取用户信息
+            String uid = tokenUserDTO.getUid();
+            LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(SysUser::getUid, uid);
+            SysUser sysUser = sysUserMapper.selectOne(queryWrapper);
+            if (ObjectUtil.isNull(sysUser)) {
+                throw new QTWebException(ResponseCode.ACCOUNT_NOT_EXISTS.getMessage());
+            }
+
+            // 更新用户信息
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getNickName())) {
+                sysUser.setNickName(updateUserInfoVO.getNickName());
+            }
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getAvatar())) {
+                sysUser.setAvatar(updateUserInfoVO.getAvatar());
+            }
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getDescription())) {
+                sysUser.setDescription(updateUserInfoVO.getDescription());
+            }
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getBirthday())) {
+                sysUser.setBirthday(updateUserInfoVO.getBirthday());
+            }
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getAddFriends())) {
+                sysUser.setAddFriends(updateUserInfoVO.getAddFriends());
+            }
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getSex())) {
+                sysUser.setSex(updateUserInfoVO.getSex());
+            }
+            if (ObjectUtil.isNotNull(updateUserInfoVO.getAreaName())) {
+                sysUser.setAreaName(updateUserInfoVO.getAreaName());
+            }
+            // 更新时间
+            sysUser.setUpdateTime(new Date(System.currentTimeMillis()));
+
+            sysUserMapper.updateById(sysUser);
+            return R.ok("用户信息更新成功");
+        } catch (Exception e) {
+            log.error("更新用户信息失败:{}, 登录方式:{}", e.getMessage(), loginType);
             throw new QTWebException(ResponseCode.ERROR.getMessage());
         }
     }

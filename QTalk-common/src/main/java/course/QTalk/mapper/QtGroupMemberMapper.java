@@ -1,7 +1,11 @@
 package course.QTalk.mapper;
 
+import course.QTalk.pojo.bo.GroupMemberInfoBO;
 import course.QTalk.pojo.po.QtGroupMember;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
 * @author 32147
@@ -11,6 +15,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface QtGroupMemberMapper extends BaseMapper<QtGroupMember> {
 
+    List<GroupMemberInfoBO> selectGroupMembersInfo(@Param("groupId") String groupId);
 }
 
 

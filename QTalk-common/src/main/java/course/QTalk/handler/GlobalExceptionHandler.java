@@ -81,6 +81,7 @@ public class GlobalExceptionHandler {
         HttpStatus httpStatus = HttpStatus.OK;
 
         if (exception instanceof MethodArgumentNotValidException) {
+            // 处理Spring Boot参数校验失败异常
             responseCode = ResponseCode.CODE_600;
             BindingResult bindingResult = ((MethodArgumentNotValidException) exception).getBindingResult();
             Map<String, String> errors = new HashMap<>();
@@ -91,24 +92,29 @@ public class GlobalExceptionHandler {
             httpStatus = HttpStatus.BAD_REQUEST;
             log.warn("参数校验异常: {}", extraMsg);
         } else if (exception instanceof HttpMessageNotReadableException) {
+            // 处理请求体解析异常（JSON格式错误、空请求体等情况）
             responseCode = ResponseCode.CODE_600;
             extraMsg = "请求体格式错误，请传入正确的JSON格式数据";
             httpStatus = HttpStatus.BAD_REQUEST;
             log.warn("请求体解析异常: {}", extraMsg);
         } else if (exception instanceof RepeatSubmitException) {
+            // 处理重复提交异常（幂等性校验失败，防止重复请求）
             responseCode = ResponseCode.CODE_429;
             extraMsg = exception.getMessage();
             httpStatus = HttpStatus.TOO_MANY_REQUESTS;
             log.warn("重复提交异常: {}", extraMsg);
         } else if (exception instanceof NoHandlerFoundException || exception instanceof NoResourceFoundException) {
+            // 处理404异常（请求的接口或资源不存在）
             responseCode = ResponseCode.CODE_404;
             httpStatus = HttpStatus.NOT_FOUND;
             // 404不打印堆栈，仅警告
             log.warn("资源未找到: {}", request.getRequestURI());
         } else if (exception instanceof DuplicateKeyException) {
+            //  处理数据库主键冲突异常（插入重复数据时触发）
             responseCode = ResponseCode.CODE_601;
             log.warn("数据库主键冲突: {}", exception.getMessage());
         } else {
+            // 处理系统内部错误、未捕获的异常
             responseCode = ResponseCode.CODE_500;
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
             // 真正的未知异常才打印堆栈
