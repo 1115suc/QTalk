@@ -41,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -201,7 +202,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
             qtGroupMapper.updateById(qtGroup);
         }
 
-        return R.ok(ResponseCode.GROUP_UPDATE_SUCCESS);
+        return R.ok(ResponseCode.GROUP_UPDATE_SUCCESS.getMessage());
     }
 
     @Override
@@ -236,22 +237,28 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
     }
 
     @Override
-    public R<GroupInfoVO> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO) {
-        if(StrUtil.isBlank(groupBasicInfoVO.getGroupId()) && StrUtil.isBlank(groupBasicInfoVO.getName())) {
+    public R<List<GroupInfoVO>> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO) {
+        if (StrUtil.isBlank(groupBasicInfoVO.getGroupId()) && StrUtil.isBlank(groupBasicInfoVO.getName())) {
             throw new QTWebException(ResponseCode.GROUP_ID_OR_NAME_EMPTY.getMessage(), ResponseCode.GROUP_ID_OR_NAME_EMPTY.getCode());
         }
 
         LambdaQueryWrapper<QtGroup> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getGroupId()),QtGroup::getGroupId, groupBasicInfoVO.getGroupId());
-        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getName()),QtGroup::getName, groupBasicInfoVO.getName());
-        // TODO 拓展成分页查询群（待修复）
-        QtGroup qtGroup = qtGroupMapper.selectList(queryWrapper).get(0);
+        // 过滤状态为正常的群组
+        queryWrapper.eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode());
 
-        if (ObjectUtil.isNotNull(qtGroup)) {
-            GroupInfoVO groupInfoVO = new GroupInfoVO();
-            BeanUtil.copyProperties(qtGroup, groupInfoVO);
+        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getGroupId()), QtGroup::getGroupId, groupBasicInfoVO.getGroupId());
+        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getName()), QtGroup::getName, groupBasicInfoVO.getName());
 
-            return R.ok(groupInfoVO);
+        List<QtGroup> qtGroups = qtGroupMapper.selectList(queryWrapper);
+
+        if (CollectionUtil.isNotEmpty(qtGroups)) {
+            List<GroupInfoVO> groupInfoVOList = qtGroups.stream().map(qtGroup -> {
+                GroupInfoVO groupInfoVO = new GroupInfoVO();
+                BeanUtil.copyProperties(qtGroup, groupInfoVO);
+                return groupInfoVO;
+            }).collect(Collectors.toList());
+
+            return R.ok(groupInfoVOList);
         }
 
         return R.error(ResponseCode.GROUP_NOT_EXISTS.getCode(), ResponseCode.GROUP_NOT_EXISTS.getMessage());

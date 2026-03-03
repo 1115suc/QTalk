@@ -22,6 +22,9 @@ public enum ResponseCode {
     GROUP_LIST_EMPTY(200, "群组列表为空"),
     GROUP_UPDATE_SUCCESS(200, "群组信息更新成功"),
 
+    // 联系人
+    CONTACT_NOT_EXISTS(200, "联系人不存在"),
+
     // ==================== 失败响应 ====================
 
     // 通用

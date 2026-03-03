@@ -43,4 +43,8 @@ public class UserController {
         Integer type = Convert.toInt(loginType);
         return sysUserService.updateUserInfo(token, type, updateUserInfoVO);
     }
+
+    // TODO 实名认证
+
+    // TODO 获取用户信息
 }

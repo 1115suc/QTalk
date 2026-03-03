@@ -22,10 +22,12 @@ import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
 import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
+import course.QTalk.pojo.vo.request.UserSearchVO;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.pojo.vo.response.UserLoginVO;
+import course.QTalk.pojo.vo.response.UserSearchInfoVO;
 import course.QTalk.service.EmailCodeService;
 import course.QTalk.service.SysUserService;
 import course.QTalk.mapper.SysUserMapper;
@@ -41,6 +43,15 @@ import java.awt.*;
 import java.util.Date;
 
 import static course.QTalk.service.base.BaseService.verifyCheckCode;
+
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.bean.BeanUtil;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author 1115suc
@@ -306,6 +317,41 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
             log.error("更新用户信息失败:{}, 登录方式:{}", e.getMessage(), loginType);
             throw new QTWebException(ResponseCode.ERROR.getMessage());
         }
+    }
+
+    @Override
+    public R<List<UserSearchInfoVO>> searchUser(UserSearchVO userSearchVO) {
+        String key = userSearchVO.getKey();
+        if (StrUtil.isBlank(key)) {
+            return R.ok(new ArrayList<>());
+        }
+
+        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+        // 过滤已删除用户
+        queryWrapper.eq(SysUser::getDeleted, DeletedEnum.NOT_DELETED.getCode());
+
+        // 构造搜索条件: uid精确匹配 OR email精确匹配 OR nickName模糊匹配
+        queryWrapper.and(wrapper -> wrapper
+                .eq(SysUser::getUid, key)
+                .or()
+                .eq(SysUser::getEmail, key)
+                .or()
+                .like(SysUser::getNickName, key)
+        );
+
+        List<SysUser> sysUsers = sysUserMapper.selectList(queryWrapper);
+
+        if (CollectionUtil.isEmpty(sysUsers)) {
+            return R.ok(ResponseCode.CONTACT_NOT_EXISTS.getMessage());
+        }
+
+        List<UserSearchInfoVO> userSearchInfoVOS = sysUsers.stream().map(sysUser -> {
+            UserSearchInfoVO vo = new UserSearchInfoVO();
+            BeanUtil.copyProperties(sysUser, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        return R.ok(userSearchInfoVOS);
     }
 }
 
