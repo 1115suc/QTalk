@@ -116,3 +116,28 @@ CREATE TABLE `sys_role_permission`
   CHARACTER SET = utf8
   COLLATE = utf8_general_ci COMMENT = '角色权限表'
   ROW_FORMAT = COMPACT;
+
+DROP TABLE IF EXISTS `sys_version`;
+CREATE TABLE `sys_version`
+(
+    `id`              bigint(20)                                              NOT NULL COMMENT '主键 ID',
+    `version`         varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci  NOT NULL COMMENT '版本号 (如：1.0.0)',
+    `platform`        tinyint(4)                                              NOT NULL DEFAULT 1 COMMENT '平台类型 (1:Web 端 2:Android 3: iOS)',
+    `update_desc`     varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '更新描述 (支持 HTML/Markdown)',
+    `file_url`        varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '安装包/更新文件 URL',
+    `file_size`       bigint(20)                                              NULL DEFAULT NULL COMMENT '文件大小 (字节)',
+    `file_md5`        varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci  NULL DEFAULT NULL COMMENT '文件 MD5 校验值',
+    `file_type`       tinyint(4)                                              NULL DEFAULT 1 COMMENT '文件类型 (1:完整包 2:增量包 3:外部分发链接)',
+    `outer_link`      varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '外部下载链接 (如第三方存储)',
+    `status`          tinyint(4)                                              NOT NULL DEFAULT 0 COMMENT '状态 (0:未发布, 1:全网发布, 2:灰度发布)',
+    `grayscale_uids`  varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '灰度测试用户 UID 列表 (逗号分隔)',
+    `publish_time`    datetime(0)                                             NULL DEFAULT NULL COMMENT '发布时间',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE INDEX `unique_version_platform` (`version`, `platform`) USING BTREE COMMENT '同一平台版本号唯一',
+    INDEX `idx_status` (`status`) USING BTREE COMMENT '状态索引',
+    INDEX `idx_platform` (`platform`) USING BTREE COMMENT '平台索引',
+    INDEX `idx_publish_time` (`publish_time`) USING BTREE COMMENT '发布时间索引'
+) ENGINE = InnoDB
+  CHARACTER SET = utf8
+  COLLATE = utf8_general_ci COMMENT = '系统版本管理表'
+  ROW_FORMAT = COMPACT;
