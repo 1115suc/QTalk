@@ -108,7 +108,6 @@ public class UserContactController {
         return R.ok(ResponseCode.APPLY_SUCCESS.getMessage());
     }
 
-    // 加载待处理请求
     @Operation(
             summary = "加载待处理请求",
             description = "加载待处理的申请，如好友申请、群申请等。",
@@ -128,7 +127,6 @@ public class UserContactController {
         return contactRequestService.loadPendingRequests(token, type, loadPendingRequestsVO);
     }
 
-    // 处理表单申请
     @Operation(
             summary = "处理表单申请",
             description = "处理表单申请，如好友申请、群申请等。",
@@ -147,4 +145,5 @@ public class UserContactController {
         Integer type = Convert.toInt(loginType);
         return contactRequestService.handleFormApply(token, type, handleFormApplyVO);
     }
+
 }

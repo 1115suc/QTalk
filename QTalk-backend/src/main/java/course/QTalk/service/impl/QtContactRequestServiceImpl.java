@@ -7,6 +7,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.CommonConstant;
 import course.QTalk.exception.QTWebException;
@@ -20,9 +21,12 @@ import course.QTalk.pojo.enums.AddFriendsEnum;
 import course.QTalk.pojo.enums.ApplyStatus;
 import course.QTalk.pojo.enums.ContactType;
 import course.QTalk.pojo.enums.DeletedEnum;
+import course.QTalk.pojo.enums.FriendStatus;
+import course.QTalk.pojo.enums.GroupRole;
 import course.QTalk.pojo.enums.GroupStatus;
 import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.pojo.enums.ResponseCode;
+import course.QTalk.pojo.enums.StatusEnum;
 import course.QTalk.pojo.po.QtContactRequest;
 import course.QTalk.pojo.po.QtFriend;
 import course.QTalk.pojo.po.QtGroup;
@@ -316,6 +320,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public R handleFormApply(String token, Integer type, HandleFormApplyVO handleFormApplyVO) {
         TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
 
@@ -343,7 +348,13 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
 
         switch (handleStatus) {
             case AGREE:
-                // TODO 添加好友
+                // 添加好友
+                if (contactType.equals(ContactType.USER)) {
+                    addFriend(uid, fromUid, CommonConstant.ONE);
+                }
+                if (contactType.equals(ContactType.GROUP)) {
+                    addGroupMember(uid, toId, CommonConstant.TWO);
+                }
                 break;
             case REJECT:
                 if (NumberUtil.equals(contactRequest.getStatus(), ApplyStatus.PENDING.getCode())) {
@@ -369,5 +380,102 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         }
 
         return R.ok(ResponseCode.SUCCESS);
+    }
+
+    // 添加联系人
+    private void addFriend(String ownUid, String friendUid, Integer addType) {
+        QtFriend qtFriend = qtFriendMapper.selectOne(new LambdaQueryWrapper<QtFriend>()
+                .eq(QtFriend::getUserUid, ownUid)
+                .eq(QtFriend::getFriendUid, friendUid));
+
+        if (ObjectUtil.isNotNull(qtFriend) && qtFriend.getStatus().equals(FriendStatus.NORMAL.getCode())) {
+            throw new QTWebException("该用户已经是你的好友");
+        }
+        // 存在则更新
+        if (ObjectUtil.isNotNull(qtFriend)) {
+            qtFriend.setStatus(FriendStatus.NORMAL.getCode());
+            qtFriend.setSource(addType);
+            qtFriend.setCreateTime(new Date());
+            qtFriendMapper.updateById(qtFriend);
+        }
+
+        // 将好友添加为自己的联系人
+        List<QtFriend> qtFriendsList = new ArrayList<>();
+        QtFriend qtOwn = new QtFriend();
+        qtOwn.setUserUid(ownUid);
+        qtOwn.setFriendUid(friendUid);
+        qtOwn.setSource(addType);
+        qtOwn.setStatus(FriendStatus.NORMAL.getCode());
+        qtOwn.setCreateTime(new Date());
+        qtFriendsList.add(qtOwn);
+
+        // 将自己添加为好友的联系人
+        QtFriend QtOther = new QtFriend();
+        QtOther.setUserUid(friendUid);
+        QtOther.setFriendUid(ownUid);
+        QtOther.setSource(addType);
+        QtOther.setStatus(FriendStatus.NORMAL.getCode());
+        QtOther.setCreateTime(new Date());
+        qtFriendsList.add(QtOther);
+
+        qtFriendMapper.insert(qtFriendsList);
+
+        // TODO 发送添加好友成功通知
+
+        // TODO 创建会话
+    }
+
+    // 添加群成员
+    private void addGroupMember(String ownUid, String groupId, Integer joinType) {
+        QtGroup group = qtGroupMapper.selectOne(new LambdaQueryWrapper<QtGroup>()
+                .eq(QtGroup::getGroupId, groupId)
+                .eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode()));
+        if (ObjectUtil.isNull(group)) {
+            throw new QTWebException(ResponseCode.GROUP_NOT_EXISTS.getMessage());
+        }
+
+        QtGroupMember qtGroupMember = qtGroupMemberMapper.selectOne(new LambdaQueryWrapper<QtGroupMember>()
+                .eq(QtGroupMember::getUserUid, ownUid)
+                .eq(QtGroupMember::getGroupId, groupId));
+
+        if (ObjectUtil.isNotNull(qtGroupMember) && qtGroupMember.getIsQuit().equals(CommonConstant.ZERO)) {
+            throw new QTWebException("该用户已经是群成员");
+        }
+        if (ObjectUtil.isNotNull(qtGroupMember) && qtGroupMember.getIsQuit().equals(CommonConstant.ONE)) {
+            qtGroupMember.setIsQuit(CommonConstant.ZERO);
+            qtGroupMember.setJoinTime(new Date());
+            qtGroupMember.setJoinType(joinType);
+            qtGroupMember.setLeaveTime(null);
+            qtGroupMemberMapper.updateById(qtGroupMember);
+
+            qtGroupMapper.update(new LambdaUpdateWrapper<QtGroup>()
+                .eq(QtGroup::getGroupId, groupId)
+                .set(QtGroup::getCurrentCount, group.getCurrentCount() + 1));
+        }
+
+        SysUser owner = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUid, ownUid)
+                .eq(SysUser::getStatus, StatusEnum.NORMAL.getCode()));
+
+        QtGroupMember member = QtGroupMember.builder()
+                .userUid(ownUid)
+                .groupId(groupId)
+                .role(GroupRole.NORMAL.getCode())
+                .alias(owner.getNickName())
+                .isTop(CommonConstant.ZERO)
+                .isDisturb(CommonConstant.ZERO)
+                .joinType(joinType)
+                .isQuit(CommonConstant.ZERO)
+                .joinTime(new Date())
+                .build();
+        qtGroupMemberMapper.insert(member);
+
+        qtGroupMapper.update(new LambdaUpdateWrapper<QtGroup>()
+                .eq(QtGroup::getGroupId, groupId)
+                .set(QtGroup::getCurrentCount, group.getCurrentCount() + 1));
+
+        // TODO 创建会话
+
+        // TODO 群成员加入通知
     }
 }
