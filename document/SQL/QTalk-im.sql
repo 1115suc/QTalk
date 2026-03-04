@@ -79,3 +79,6 @@ CREATE TABLE `qt_contact_request`
     KEY `idx_from_uid` (`from_uid`) USING BTREE COMMENT '发送方查询索引'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='QT联系人申请表';
+
+create index qt_contact_request_from_uid_to_id_contact_id_index
+    on qt_contact_request (from_uid, to_id, contact_id);

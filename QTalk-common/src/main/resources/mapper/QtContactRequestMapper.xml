@@ -5,19 +5,36 @@
 <mapper namespace="course.QTalk.mapper.QtContactRequestMapper">
 
     <resultMap id="BaseResultMap" type="course.QTalk.pojo.po.QtContactRequest">
-            <id property="id" column="id" />
-            <result property="fromUid" column="from_uid" />
-            <result property="toId" column="to_id" />
-            <result property="toType" column="to_type" />
-            <result property="contactId" column="contact_id" />
-            <result property="reason" column="reason" />
-            <result property="status" column="status" />
-            <result property="createTime" column="create_time" />
-            <result property="handleTime" column="handle_time" />
+        <id property="id" column="id"/>
+        <result property="fromUid" column="from_uid"/>
+        <result property="toId" column="to_id"/>
+        <result property="toType" column="to_type"/>
+        <result property="contactId" column="contact_id"/>
+        <result property="reason" column="reason"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="handleTime" column="handle_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,from_uid,to_id,to_type,contact_id,reason,
         status,create_time,handle_time
     </sql>
+
+    <select id="selectPending" resultType="course.QTalk.pojo.bo.LoadPendingBo">
+        select r.from_uid    as fromUid,
+               r.to_type     as toType,
+               r.reason      as reason,
+               r.status      as status,
+               r.create_time as createTime,
+               u.nick_name   as nickName,
+               u.avatar      as avatar
+        from QTalk.qt_contact_request r
+                 left join QTalk.sys_user u on r.from_uid = u.uid
+        where r.contact_id = #{uid}
+          and r.to_type = #{type}
+          and r.status = #{status}
+        order by r.create_time desc
+    </select>
+
 </mapper>

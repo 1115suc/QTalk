@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/user")
 @RequiredArgsConstructor
 @Tag(name = "用户信息管理", description = "用户信息相关接口，包括更新用户信息等功能")
-public class UserController {
+public class UserInfoController {
 
     private final SysUserService sysUserService;
 

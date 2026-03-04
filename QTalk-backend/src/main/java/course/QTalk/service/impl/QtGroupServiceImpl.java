@@ -242,33 +242,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         return R.ok(ResponseCode.GROUP_LIST_EMPTY.getMessage());
     }
 
-    @Override
-    public R<List<GroupInfoVO>> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO) {
-        if (StrUtil.isBlank(groupBasicInfoVO.getGroupId()) && StrUtil.isBlank(groupBasicInfoVO.getName())) {
-            throw new QTWebException(ResponseCode.GROUP_ID_OR_NAME_EMPTY.getMessage(), ResponseCode.GROUP_ID_OR_NAME_EMPTY.getCode());
-        }
 
-        LambdaQueryWrapper<QtGroup> queryWrapper = new LambdaQueryWrapper<>();
-        // 过滤状态为正常的群组
-        queryWrapper.eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode());
-
-        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getGroupId()), QtGroup::getGroupId, groupBasicInfoVO.getGroupId());
-        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getName()), QtGroup::getName, groupBasicInfoVO.getName());
-
-        List<QtGroup> qtGroups = qtGroupMapper.selectList(queryWrapper);
-
-        if (CollectionUtil.isNotEmpty(qtGroups)) {
-            List<GroupInfoVO> groupInfoVOList = qtGroups.stream().map(qtGroup -> {
-                GroupInfoVO groupInfoVO = new GroupInfoVO();
-                BeanUtil.copyProperties(qtGroup, groupInfoVO);
-                return groupInfoVO;
-            }).collect(Collectors.toList());
-
-            return R.ok(groupInfoVOList);
-        }
-
-        return R.error(ResponseCode.GROUP_NOT_EXISTS.getCode(), ResponseCode.GROUP_NOT_EXISTS.getMessage());
-    }
 
     @Override
     public R<GroupDetailInfoVO> getGroupDetailInfo(String token, Integer type, String groupId) {
@@ -319,80 +293,6 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
                 .build();
 
         return R.ok(groupDetailInfoVO);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
-        String fromUid = tokenUserDTO.getUid();
-        String groupId = applyJoinContactVO.getApplyId();
-
-        String applyId = applyJoinContactVO.getApplyId();
-        if (!applyId.startsWith("Q")) {
-            throw new QTWebException(ResponseCode.GROUP_ID_ERROR.getMessage());
-        }
-
-        // 1. 校验群组是否存在且正常
-        LambdaQueryWrapper<QtGroup> groupQuery = new LambdaQueryWrapper<>();
-        groupQuery.eq(QtGroup::getGroupId, groupId);
-        groupQuery.eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode());
-        QtGroup qtGroup = qtGroupMapper.selectOne(groupQuery);
-        if (ObjectUtil.isNull(qtGroup)) {
-            throw new QTWebException(ResponseCode.GROUP_NOT_EXISTS.getMessage());
-        }
-
-        // 2. 校验入群方式
-        Integer joinType = qtGroup.getJoinType();
-
-        // 同意后加入
-        if (joinType.equals(CommonConstant.ZERO)) { // 2:需要群主或管理员同意
-            // 校验是否已经在群组中
-            LambdaQueryWrapper<QtGroupMember> memberQuery = new LambdaQueryWrapper<>();
-            memberQuery.eq(QtGroupMember::getGroupId, groupId);
-            memberQuery.eq(QtGroupMember::getUserUid, fromUid);
-            memberQuery.eq(QtGroupMember::getIsQuit, CommonConstant.ZERO);
-            Long memberCount = qtGroupMemberMapper.selectCount(memberQuery);
-            if (memberCount > 0) {
-                throw new QTWebException("您已在该群组中");
-            }
-
-            // 检查是否已经申请过且未处理
-            LambdaQueryWrapper<QtContactRequest> requestQuery = new LambdaQueryWrapper<>();
-            requestQuery.eq(QtContactRequest::getFromUid, fromUid);
-            requestQuery.eq(QtContactRequest::getToId, groupId);
-            requestQuery.eq(QtContactRequest::getToType, ContactType.GROUP.getCode());
-            requestQuery.eq(QtContactRequest::getStatus, ApplyStatus.PENDING.getCode());
-            Long count = qtContactRequestMapper.selectCount(requestQuery);
-            if (count > 0) {
-                throw new QTWebException(ResponseCode.DUPLICATE_REQUEST.getMessage());
-            }
-
-            // 构造申请理由
-            String reason = applyJoinContactVO.getApplyReason();
-            if (StrUtil.isBlank(reason)) {
-                reason = String.format(CommonConstant.APPLY_REASON_TEMPLATE, tokenUserDTO.getNickname());
-            }
-
-            // 插入申请记录
-            // 群组申请，contactId设置为群主ID（简化处理，后续可扩展为通知所有管理员）
-            QtContactRequest contactRequest = new QtContactRequest();
-            contactRequest.setFromUid(fromUid);
-            contactRequest.setToId(groupId);
-            contactRequest.setToType(ContactType.GROUP.getCode());
-            contactRequest.setContactId(qtGroup.getOwnerUid());
-            contactRequest.setReason(reason);
-            contactRequest.setStatus(ApplyStatus.PENDING.getCode());
-            contactRequest.setCreateTime(new Date());
-
-            qtContactRequestMapper.insert(contactRequest);
-        }
-
-        if (joinType.equals(CommonConstant.THREE)) { // 3:拒绝任何人加入
-            throw new QTWebException("该群组拒绝任何人加入");
-        }
-
-        // TODO 直接加入实现
     }
 
 }

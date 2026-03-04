@@ -26,9 +26,5 @@ public interface QtGroupService extends IService<QtGroup> {
 
     R<List<MyGroupVO>> queryMyGroups(String token, Integer type);
 
-    R<List<GroupInfoVO>> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO);
-
     R<GroupDetailInfoVO> getGroupDetailInfo(String token, Integer type, String groupId);
-
-    void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO);
 }

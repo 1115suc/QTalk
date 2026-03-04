@@ -6,6 +6,8 @@ import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
+import course.QTalk.pojo.vo.request.HandleFormApplyVO;
+import course.QTalk.pojo.vo.request.LoadPendingRequestsVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
 import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
 import course.QTalk.pojo.vo.request.UserSearchVO;
@@ -13,6 +15,7 @@ import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.vo.response.UserLoginVO;
 import course.QTalk.pojo.vo.response.UserSearchInfoVO;
+import course.QTalk.pojo.vo.response.LoadPendingResponseVO;
 
 import java.util.List;
 
@@ -26,6 +29,8 @@ public interface SysUserService extends IService<SysUser> {
     R<CheckCodeVo> getCaptcha();
     // 用户注册接口
     R register(EmailLoginVO emailLoginVo);
+    // 更新用户信息
+    R updateUserInfo(String token, Integer type, UpdateUserInfoVO updateUserInfoVO);
     // 邮箱密码登录
     R<UserLoginVO> emailPasswordLogin(EmailPasswordLoginVO emailPasswordLoginVo);
     // 邮箱验证码登录
@@ -34,10 +39,4 @@ public interface SysUserService extends IService<SysUser> {
     R logout(String token, Integer loginType);
     // 重置密码
     R resetPassword(String token, Integer loginType, ResetPasswordVO resetVo);
-    // 更新用户信息
-    R updateUserInfo(String token, Integer loginType, UpdateUserInfoVO updateUserInfoVO);
-    // 申请加入群聊
-    void applyAddFriend(String token, Integer type, ApplyJoinContactVO applyJoinContactVO);
-    // 搜索用户
-    R<List<UserSearchInfoVO>> searchUser(UserSearchVO userSearchVO);
 }

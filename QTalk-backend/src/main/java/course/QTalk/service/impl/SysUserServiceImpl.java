@@ -17,7 +17,7 @@ import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
 import course.QTalk.mapper.QtContactRequestMapper;
 import course.QTalk.mapper.QtFriendMapper;
-import course.QTalk.mapper.QtGroupMemberMapper;
+import course.QTalk.pojo.bo.LoadPendingBo;
 import course.QTalk.pojo.dto.TokenUserDTO;
 import course.QTalk.pojo.enums.*;
 import course.QTalk.pojo.po.QtContactRequest;
@@ -27,6 +27,8 @@ import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
+import course.QTalk.pojo.vo.request.HandleFormApplyVO;
+import course.QTalk.pojo.vo.request.LoadPendingRequestsVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
 import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
 import course.QTalk.pojo.vo.request.UserSearchVO;
@@ -35,6 +37,7 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.pojo.vo.response.UserLoginVO;
 import course.QTalk.pojo.vo.response.UserSearchInfoVO;
+import course.QTalk.pojo.vo.response.LoadPendingResponseVO;
 import course.QTalk.service.EmailCodeService;
 import course.QTalk.service.SysUserService;
 import course.QTalk.mapper.SysUserMapper;
@@ -47,6 +50,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Date;
 
 import static course.QTalk.service.base.BaseService.verifyCheckCode;
@@ -54,20 +58,20 @@ import static course.QTalk.service.base.BaseService.verifyCheckCode;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.bean.BeanUtil;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-* @author 1115suc
-* @description 针对表【sys_user(用户表)】的数据库操作Service实现
-* @createDate 2026-02-25 12:22:35
-*/
+ * @author 1115suc
+ * @description 针对表【sys_user(用户表)】的数据库操作Service实现
+ * @createDate 2026-02-25 12:22:35
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
-    implements SysUserService{
+        implements SysUserService {
 
     private final IdWorker idWorker;
     private final PasswordEncoder passwordEncoder;
@@ -76,6 +80,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     private final SysUserMapper sysUserMapper;
     private final QtFriendMapper qtFriendMapper;
     private final QtContactRequestMapper qtContactRequestMapper;
+
+    private TokenUserDTO getTokenUserDTO(String token, Integer type) {
+        String redisPrefix = LoginTypeEnum.of(type).getPrefix();
+        Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
+        TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
+        return tokenUserDTO;
+    }
 
     @Override
     public R<CheckCodeVo> getCaptcha() {
@@ -203,7 +214,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
                     tokenUserDTO.setExpireAt(System.currentTimeMillis() + TimeConstant.ONE_WEEK);
                     redisUtil.set(redisPrefix + token, JSONUtil.toJsonStr(tokenUserDTO), TimeConstant.ONE_WEEK);
                 }
-            }else{
+            } else {
                 TokenUserDTO tokenUserDTO = new TokenUserDTO();
                 tokenUserDTO.setUid(sysUser.getUid());
                 tokenUserDTO.setNickname(sysUser.getNickName());
@@ -324,112 +335,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
             log.error("更新用户信息失败:{}, 登录方式:{}", e.getMessage(), loginType);
             throw new QTWebException(ResponseCode.ERROR.getMessage());
         }
-    }
-
-    @Override
-    public R<List<UserSearchInfoVO>> searchUser(UserSearchVO userSearchVO) {
-        String uid = userSearchVO.getUid();
-        String nickName = userSearchVO.getNickName();
-        String email = userSearchVO.getEmail();
-
-        if (StrUtil.isBlank(uid) && StrUtil.isBlank(nickName) && StrUtil.isBlank(email)) {
-            return R.ok(ResponseCode.PARAM_NOT_EMPTY.getMessage());
-        }
-
-        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
-        // 过滤已删除用户
-        queryWrapper.eq(SysUser::getDeleted, DeletedEnum.NOT_DELETED.getCode());
-
-        // 构造搜索条件: uid精确匹配 OR email精确匹配 OR nickName模糊匹配
-        queryWrapper.and(wrapper -> wrapper
-                .eq(SysUser::getUid, uid)
-                .or()
-                .eq(SysUser::getEmail, email)
-                .or()
-                .like(SysUser::getNickName, nickName)
-        );
-
-        List<SysUser> sysUsers = sysUserMapper.selectList(queryWrapper);
-
-        if (CollectionUtil.isEmpty(sysUsers)) {
-            return R.ok(ResponseCode.CONTACT_NOT_EXISTS.getMessage());
-        }
-
-        List<UserSearchInfoVO> userSearchInfoVOS = sysUsers.stream().map(sysUser -> {
-            UserSearchInfoVO vo = new UserSearchInfoVO();
-            BeanUtil.copyProperties(sysUser, vo);
-            return vo;
-        }).collect(Collectors.toList());
-
-        return R.ok(userSearchInfoVOS);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void applyAddFriend(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
-        String redisPrefix = LoginTypeEnum.of(type).getPrefix();
-        Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
-        TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
-
-        String applyId = applyJoinContactVO.getApplyId();
-        if (!applyId.startsWith("U")) {
-            throw new QTWebException(ResponseCode.USER_ID_ERROR.getMessage());
-        }
-
-        String fromUid = tokenUserDTO.getUid();
-        String toUid = applyJoinContactVO.getApplyId();
-
-        // 1. 校验目标用户是否存在
-        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SysUser::getUid, toUid);
-        queryWrapper.eq(SysUser::getDeleted, DeletedEnum.NOT_DELETED.getCode());
-        SysUser toUser = sysUserMapper.selectOne(queryWrapper);
-        if (ObjectUtil.isNull(toUser)) {
-            throw new QTWebException(ResponseCode.ACCOUNT_NOT_EXISTS.getMessage());
-        }
-
-        // 2. 校验是否允许加好友
-        if (toUser.getAddFriends().equals(AddFriendsEnum.NOT_ALLOW_ADD_FRIEND.getCode())) {
-            throw new QTWebException("对方设置了不允许添加好友");
-        }
-
-        // 3. 校验是否已经是好友
-        LambdaQueryWrapper<QtFriend> friendQuery = new LambdaQueryWrapper<>();
-        friendQuery.eq(QtFriend::getUserUid, fromUid);
-        friendQuery.eq(QtFriend::getFriendUid, toUid);
-        QtFriend friend = qtFriendMapper.selectOne(friendQuery);
-        if (ObjectUtil.isNotNull(friend) && friend.getStatus().equals(CommonConstant.ZERO)) {
-            throw new QTWebException(ResponseCode.ALREADY_FRIEND.getMessage());
-        }
-
-        // 4. 检查是否已经申请过且未处理
-        LambdaQueryWrapper<QtContactRequest> requestQuery = new LambdaQueryWrapper<>();
-        requestQuery.eq(QtContactRequest::getFromUid, fromUid);
-        requestQuery.eq(QtContactRequest::getToId, toUid);
-        requestQuery.eq(QtContactRequest::getToType, ContactType.USER.getCode());
-        requestQuery.eq(QtContactRequest::getStatus, ApplyStatus.PENDING.getCode());
-        Long count = qtContactRequestMapper.selectCount(requestQuery);
-        if (count > 0) {
-            throw new QTWebException(ResponseCode.DUPLICATE_REQUEST.getMessage());
-        }
-
-        // 5. 构造申请理由
-        String reason = applyJoinContactVO.getApplyReason();
-        if (StrUtil.isBlank(reason)) {
-            reason = String.format(CommonConstant.APPLY_REASON_TEMPLATE, tokenUserDTO.getNickname());
-        }
-
-        // 6. 插入申请记录
-        QtContactRequest contactRequest = new QtContactRequest();
-        contactRequest.setFromUid(fromUid);
-        contactRequest.setToId(toUid);
-        contactRequest.setToType(ContactType.USER.getCode());
-        contactRequest.setContactId(toUid); // 对于好友申请，contactId即为对方UID
-        contactRequest.setReason(reason);
-        contactRequest.setStatus(ApplyStatus.PENDING.getCode());
-        contactRequest.setCreateTime(new Date());
-
-        qtContactRequestMapper.insert(contactRequest);
     }
 }
 

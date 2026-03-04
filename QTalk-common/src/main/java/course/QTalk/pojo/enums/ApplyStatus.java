@@ -21,4 +21,13 @@ public enum ApplyStatus {
     public String getMessage() {
         return message;
     }
+
+    public static ApplyStatus getByCode(Integer code) {
+        for (ApplyStatus applyStatus : ApplyStatus.values()) {
+            if (applyStatus.code.equals(code)) {
+                return applyStatus;
+            }
+        }
+        return null;
+    }
 }

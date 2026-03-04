@@ -17,7 +17,7 @@ public class QtContactRequest {
     /**
      * 自增主键
      */
-    @TableId(type = IdType.AUTO)
+    @TableId
     private Long id;
 
     /**

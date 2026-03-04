@@ -31,6 +31,8 @@ public enum ResponseCode {
     // 通用
     ERROR(0, "操作失败"),
     PARAM_NOT_EMPTY(0, "请求参数不能为空"),
+    PARAM_ERROR(0, "请求参数错误"),
+    TIMEOUT_ERROR(0, "请求已过期"),
     DATA_ERROR(0, "参数异常"),
     NO_RESPONSE_DATA(0, "无响应数据"),
     SERVER_ERROR(500, "服务器返回错误，请联系管理员"),

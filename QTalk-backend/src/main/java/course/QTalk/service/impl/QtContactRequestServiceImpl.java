@@ -1,22 +1,373 @@
 package course.QTalk.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import course.QTalk.constant.CommonConstant;
+import course.QTalk.exception.QTWebException;
+import course.QTalk.mapper.QtFriendMapper;
+import course.QTalk.mapper.QtGroupMapper;
+import course.QTalk.mapper.QtGroupMemberMapper;
+import course.QTalk.mapper.SysUserMapper;
+import course.QTalk.pojo.bo.LoadPendingBo;
+import course.QTalk.pojo.dto.TokenUserDTO;
+import course.QTalk.pojo.enums.AddFriendsEnum;
+import course.QTalk.pojo.enums.ApplyStatus;
+import course.QTalk.pojo.enums.ContactType;
+import course.QTalk.pojo.enums.DeletedEnum;
+import course.QTalk.pojo.enums.GroupStatus;
+import course.QTalk.pojo.enums.LoginTypeEnum;
+import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.pojo.po.QtContactRequest;
+import course.QTalk.pojo.po.QtFriend;
+import course.QTalk.pojo.po.QtGroup;
+import course.QTalk.pojo.po.QtGroupMember;
+import course.QTalk.pojo.po.SysUser;
+import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
+import course.QTalk.pojo.vo.request.GroupBasicInfoVO;
+import course.QTalk.pojo.vo.request.HandleFormApplyVO;
+import course.QTalk.pojo.vo.request.LoadPendingRequestsVO;
+import course.QTalk.pojo.vo.request.UserSearchVO;
+import course.QTalk.pojo.vo.response.GroupInfoVO;
+import course.QTalk.pojo.vo.response.LoadPendingResponseVO;
+import course.QTalk.pojo.vo.response.R;
+import course.QTalk.pojo.vo.response.UserSearchInfoVO;
 import course.QTalk.service.QtContactRequestService;
 import course.QTalk.mapper.QtContactRequestMapper;
+import course.QTalk.util.RedisUtil;
+import lombok.RequiredArgsConstructor;
+import org.apache.ibatis.jdbc.Null;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
-* @author 32147
-* @description 针对表【qt_contact_request(QT联系人申请表)】的数据库操作Service实现
-* @createDate 2026-02-28 11:32:12
-*/
+ * @author 32147
+ * @description 针对表【qt_contact_request(QT联系人申请表)】的数据库操作Service实现
+ * @createDate 2026-02-28 11:32:12
+ */
 @Service
+@RequiredArgsConstructor
 public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMapper, QtContactRequest>
-    implements QtContactRequestService{
+        implements QtContactRequestService {
 
+    private final RedisUtil redisUtil;
+    private final SysUserMapper sysUserMapper;
+    private final QtGroupMapper qtGroupMapper;
+    private final QtGroupMemberMapper qtGroupMemberMapper;
+    private final QtFriendMapper qtFriendMapper;
+    private final QtContactRequestMapper qtContactRequestMapper;
+
+    private TokenUserDTO getTokenUserDTO(String token, Integer type) {
+        String redisPrefix = LoginTypeEnum.of(type).getPrefix();
+        Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
+        TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
+        return tokenUserDTO;
+    }
+
+    @Override
+    public R<List<UserSearchInfoVO>> searchUser(UserSearchVO userSearchVO) {
+        String uid = userSearchVO.getUid();
+        String nickName = userSearchVO.getNickName();
+        String email = userSearchVO.getEmail();
+
+        if (StrUtil.isBlank(uid) && StrUtil.isBlank(nickName) && StrUtil.isBlank(email)) {
+            return R.ok(ResponseCode.PARAM_NOT_EMPTY.getMessage());
+        }
+
+        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+        // 过滤已删除用户
+        queryWrapper.eq(SysUser::getDeleted, DeletedEnum.NOT_DELETED.getCode());
+
+        // 构造搜索条件: uid精确匹配 OR email精确匹配 OR nickName模糊匹配
+        queryWrapper.and(wrapper -> wrapper
+                .eq(SysUser::getUid, uid)
+                .or()
+                .eq(SysUser::getEmail, email)
+                .or()
+                .like(SysUser::getNickName, nickName)
+        );
+
+        List<SysUser> sysUsers = sysUserMapper.selectList(queryWrapper);
+
+        if (CollectionUtil.isEmpty(sysUsers)) {
+            return R.ok(ResponseCode.CONTACT_NOT_EXISTS.getMessage());
+        }
+
+        List<UserSearchInfoVO> userSearchInfoVOS = sysUsers.stream().map(sysUser -> {
+            UserSearchInfoVO vo = new UserSearchInfoVO();
+            BeanUtil.copyProperties(sysUser, vo);
+            return vo;
+        }).collect(Collectors.toList());
+
+        return R.ok(userSearchInfoVOS);
+    }
+
+    @Override
+    public R<List<GroupInfoVO>> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO) {
+        if (StrUtil.isBlank(groupBasicInfoVO.getGroupId()) && StrUtil.isBlank(groupBasicInfoVO.getName())) {
+            throw new QTWebException(ResponseCode.GROUP_ID_OR_NAME_EMPTY.getMessage(), ResponseCode.GROUP_ID_OR_NAME_EMPTY.getCode());
+        }
+
+        LambdaQueryWrapper<QtGroup> queryWrapper = new LambdaQueryWrapper<>();
+        // 过滤状态为正常的群组
+        queryWrapper.eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode());
+
+        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getGroupId()), QtGroup::getGroupId, groupBasicInfoVO.getGroupId());
+        queryWrapper.like(StrUtil.isNotBlank(groupBasicInfoVO.getName()), QtGroup::getName, groupBasicInfoVO.getName());
+
+        List<QtGroup> qtGroups = qtGroupMapper.selectList(queryWrapper);
+
+        if (CollectionUtil.isNotEmpty(qtGroups)) {
+            List<GroupInfoVO> groupInfoVOList = qtGroups.stream().map(qtGroup -> {
+                GroupInfoVO groupInfoVO = new GroupInfoVO();
+                BeanUtil.copyProperties(qtGroup, groupInfoVO);
+                return groupInfoVO;
+            }).collect(Collectors.toList());
+
+            return R.ok(groupInfoVOList);
+        }
+
+        return R.error(ResponseCode.GROUP_NOT_EXISTS.getCode(), ResponseCode.GROUP_NOT_EXISTS.getMessage());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void applyAddFriend(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+
+        String applyId = applyJoinContactVO.getApplyId();
+        if (!applyId.startsWith("U")) {
+            throw new QTWebException(ResponseCode.USER_ID_ERROR.getMessage());
+        }
+
+        String fromUid = tokenUserDTO.getUid();
+        String toUid = applyJoinContactVO.getApplyId();
+
+        // 1. 校验目标用户是否存在
+        LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SysUser::getUid, toUid);
+        queryWrapper.eq(SysUser::getDeleted, DeletedEnum.NOT_DELETED.getCode());
+        SysUser toUser = sysUserMapper.selectOne(queryWrapper);
+        if (ObjectUtil.isNull(toUser)) {
+            throw new QTWebException(ResponseCode.ACCOUNT_NOT_EXISTS.getMessage());
+        }
+
+        // 2. 校验是否允许加好友
+        if (toUser.getAddFriends().equals(AddFriendsEnum.NOT_ALLOW_ADD_FRIEND.getCode())) {
+            throw new QTWebException("对方设置了不允许添加好友");
+        }
+
+        // 3. 校验是否已经是好友
+        LambdaQueryWrapper<QtFriend> friendQuery = new LambdaQueryWrapper<>();
+        friendQuery.eq(QtFriend::getUserUid, fromUid);
+        friendQuery.eq(QtFriend::getFriendUid, toUid);
+        QtFriend friend = qtFriendMapper.selectOne(friendQuery);
+        if (ObjectUtil.isNotNull(friend) && friend.getStatus().equals(CommonConstant.ZERO)) {
+            throw new QTWebException(ResponseCode.ALREADY_FRIEND.getMessage());
+        }
+
+        // 4. 检查是否已经申请过且未处理
+        LambdaQueryWrapper<QtContactRequest> requestQuery = new LambdaQueryWrapper<>();
+        requestQuery.eq(QtContactRequest::getFromUid, fromUid);
+        requestQuery.eq(QtContactRequest::getToId, toUid);
+        requestQuery.eq(QtContactRequest::getToType, ContactType.USER.getCode());
+        requestQuery.eq(QtContactRequest::getStatus, ApplyStatus.PENDING.getCode());
+        Long count = qtContactRequestMapper.selectCount(requestQuery);
+        if (count > 0) {
+            throw new QTWebException(ResponseCode.DUPLICATE_REQUEST.getMessage());
+        }
+
+        // 5. 构造申请理由
+        String reason = applyJoinContactVO.getApplyReason();
+        if (StrUtil.isBlank(reason)) {
+            reason = String.format(CommonConstant.APPLY_REASON_TEMPLATE, tokenUserDTO.getNickname());
+        }
+
+        // 6. 插入申请记录
+        QtContactRequest contactRequest = new QtContactRequest();
+        contactRequest.setFromUid(fromUid);
+        contactRequest.setToId(toUid);
+        contactRequest.setToType(ContactType.USER.getCode());
+        contactRequest.setContactId(toUid); // 对于好友申请，contactId即为对方UID
+        contactRequest.setReason(reason);
+        contactRequest.setStatus(ApplyStatus.PENDING.getCode());
+        contactRequest.setCreateTime(new Date());
+
+        qtContactRequestMapper.insert(contactRequest);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+
+        String fromUid = tokenUserDTO.getUid();
+        String groupId = applyJoinContactVO.getApplyId();
+
+        String applyId = applyJoinContactVO.getApplyId();
+        if (!applyId.startsWith("Q")) {
+            throw new QTWebException(ResponseCode.GROUP_ID_ERROR.getMessage());
+        }
+
+        // 1. 校验群组是否存在且正常
+        LambdaQueryWrapper<QtGroup> groupQuery = new LambdaQueryWrapper<>();
+        groupQuery.eq(QtGroup::getGroupId, groupId);
+        groupQuery.eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode());
+        QtGroup qtGroup = qtGroupMapper.selectOne(groupQuery);
+        if (ObjectUtil.isNull(qtGroup)) {
+            throw new QTWebException(ResponseCode.GROUP_NOT_EXISTS.getMessage());
+        }
+
+        // 2. 校验入群方式
+        Integer joinType = qtGroup.getJoinType();
+
+        // 同意后加入
+        if (joinType.equals(CommonConstant.ZERO)) { // 2:需要群主或管理员同意
+            // 校验是否已经在群组中
+            LambdaQueryWrapper<QtGroupMember> memberQuery = new LambdaQueryWrapper<>();
+            memberQuery.eq(QtGroupMember::getGroupId, groupId);
+            memberQuery.eq(QtGroupMember::getUserUid, fromUid);
+            memberQuery.eq(QtGroupMember::getIsQuit, CommonConstant.ZERO);
+            Long memberCount = qtGroupMemberMapper.selectCount(memberQuery);
+            if (memberCount > 0) {
+                throw new QTWebException("您已在该群组中");
+            }
+
+            // 检查是否已经申请过且未处理
+            LambdaQueryWrapper<QtContactRequest> requestQuery = new LambdaQueryWrapper<>();
+            requestQuery.eq(QtContactRequest::getFromUid, fromUid);
+            requestQuery.eq(QtContactRequest::getToId, groupId);
+            requestQuery.eq(QtContactRequest::getToType, ContactType.GROUP.getCode());
+            requestQuery.eq(QtContactRequest::getStatus, ApplyStatus.PENDING.getCode());
+            Long count = qtContactRequestMapper.selectCount(requestQuery);
+            if (count > 0) {
+                throw new QTWebException(ResponseCode.DUPLICATE_REQUEST.getMessage());
+            }
+
+            // 构造申请理由
+            String reason = applyJoinContactVO.getApplyReason();
+            if (StrUtil.isBlank(reason)) {
+                reason = String.format(CommonConstant.APPLY_REASON_TEMPLATE,
+                        tokenUserDTO.getNickname(),
+                        qtGroup.getName(),
+                        qtGroup.getGroupId());
+            } else {
+                reason += "，群组名称为：" + qtGroup.getName() + "，群组ID为：" + qtGroup.getGroupId();
+            }
+
+            // 插入申请记录
+            // 群组申请，contactId设置为群主ID（简化处理，后续可扩展为通知所有管理员）
+            QtContactRequest contactRequest = new QtContactRequest();
+            contactRequest.setFromUid(fromUid);
+            contactRequest.setToId(groupId);
+            contactRequest.setToType(ContactType.GROUP.getCode());
+            contactRequest.setContactId(qtGroup.getOwnerUid());
+            contactRequest.setReason(reason);
+            contactRequest.setStatus(ApplyStatus.PENDING.getCode());
+            contactRequest.setCreateTime(new Date());
+
+            qtContactRequestMapper.insert(contactRequest);
+        }
+
+        if (joinType.equals(CommonConstant.THREE)) { // 3:拒绝任何人加入
+            throw new QTWebException("该群组拒绝任何人加入");
+        }
+
+        // TODO 直接加入实现
+    }
+
+    @Override
+    public R<List<LoadPendingResponseVO>> loadPendingRequests(String token, Integer type, LoadPendingRequestsVO loadPendingRequestsVO) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+
+        String uid = tokenUserDTO.getUid();
+        Integer receivingType = loadPendingRequestsVO.getReceivingType();
+        ContactType contactType = ContactType.getByCode(receivingType);
+        ApplyStatus applyStatus = ApplyStatus.PENDING;
+
+        List<LoadPendingBo> loadPendingBo = qtContactRequestMapper.selectPending(uid, contactType.getCode(), applyStatus.getCode());
+
+        if (CollectionUtil.isEmpty(loadPendingBo)) {
+            return R.ok(new ArrayList<>());
+        }
+
+        List<LoadPendingResponseVO> loadPendingResponseVO = loadPendingBo.stream()
+                .map(loadPending -> {
+                    LoadPendingResponseVO vo = new LoadPendingResponseVO();
+                    vo.setFromUid(loadPending.getFromUid());
+                    vo.setNickName(loadPending.getNickName());
+                    vo.setAvatar(loadPending.getAvatar());
+                    vo.setReason(loadPending.getReason());
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        return R.ok(loadPendingResponseVO);
+    }
+
+    @Override
+    public R handleFormApply(String token, Integer type, HandleFormApplyVO handleFormApplyVO) {
+        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+
+        String uid = tokenUserDTO.getUid();
+        String fromUid = handleFormApplyVO.getFromUid();
+        String toId = handleFormApplyVO.getToId();
+        Integer receivingType = handleFormApplyVO.getReceivingType();
+
+        ContactType contactType = ContactType.getByCode(receivingType);
+        ApplyStatus applyStatus = ApplyStatus.PENDING;
+
+        LambdaQueryWrapper<QtContactRequest> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(QtContactRequest::getFromUid, fromUid);
+        queryWrapper.eq(QtContactRequest::getToId, toId);
+        queryWrapper.eq(QtContactRequest::getContactId, uid);
+        queryWrapper.eq(QtContactRequest::getToType, contactType.getCode());
+        queryWrapper.eq(QtContactRequest::getStatus, applyStatus.getCode());
+        QtContactRequest contactRequest = qtContactRequestMapper.selectOne(queryWrapper);
+
+        if (ObjectUtil.isNull(contactRequest)) {
+            throw new QTWebException(ResponseCode.TIMEOUT_ERROR.getMessage());
+        }
+
+        ApplyStatus handleStatus = ApplyStatus.getByCode(handleFormApplyVO.getHandleResult());
+
+        switch (handleStatus) {
+            case AGREE:
+                // TODO 添加好友
+                break;
+            case REJECT:
+                if (NumberUtil.equals(contactRequest.getStatus(), ApplyStatus.PENDING.getCode())) {
+                    contactRequest.setStatus(ApplyStatus.REJECT.getCode());
+                    contactRequest.setHandleTime(new Date());
+                    qtContactRequestMapper.updateById(contactRequest);
+                    // TODO 发送拒绝通知
+                }else {
+                    throw new QTWebException(ResponseCode.TIMEOUT_ERROR.getMessage());
+                }
+                break;
+            case IGNORE:
+                if (NumberUtil.equals(contactRequest.getStatus(), ApplyStatus.PENDING.getCode())) {
+                    contactRequest.setStatus(ApplyStatus.IGNORE.getCode());
+                    contactRequest.setHandleTime(new Date());
+                    qtContactRequestMapper.updateById(contactRequest);
+                }else {
+                    throw new QTWebException(ResponseCode.TIMEOUT_ERROR.getMessage());
+                }
+                break;
+            default:
+                throw new QTWebException(ResponseCode.PARAM_ERROR.getMessage());
+        }
+
+        return R.ok(ResponseCode.SUCCESS);
+    }
 }
-
-
-
-

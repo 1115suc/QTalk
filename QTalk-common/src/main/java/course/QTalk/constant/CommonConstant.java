@@ -8,5 +8,6 @@ public class CommonConstant {
     public static final Integer FIVE = 5;
     public static final Integer TEN = 10;
 
-    public static final String APPLY_REASON_TEMPLATE = "我是%s，请求添加好友/入群";
+    public static final String APPLY_REASON_TEMPLATE = "我是%s，请求添加您为好友";
+    public static final String APPLY_REASON_GROUP = "我是%s，请求添加你的%s群聊，群聊号为:%s";
 }
