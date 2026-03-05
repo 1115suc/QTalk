@@ -29,15 +29,13 @@ ALTER TABLE `chat_message`
 DROP TABLE IF EXISTS `chat_session_user`;
 CREATE TABLE `chat_session_user`
 (
-    `session_id`   varchar(32) NOT NULL COMMENT '会话 id',
     `uid`          varchar(12) NOT NULL COMMENT '用户 id',
     `contact_id`   varchar(12) NOT NULL COMMENT '联系人 id',
+    `session_id`   varchar(32) NOT NULL COMMENT '会话 id',
     `contact_name` varchar(20) DEFAULT NULL COMMENT '联系人名称',
     `last_message`      varchar(500) DEFAULT NULL COMMENT '最后接收到的消息',
     `last_receive_time` bigint(11)   DEFAULT NULL COMMENT '最后接收到的消息（毫秒）',
-    PRIMARY KEY (`session_id`) USING BTREE,
-    KEY `idx_session_id` (`uid`) USING BTREE,
-    KEY `idx_contact_id` (`uid`, `contact_id`) USING BTREE
+    PRIMARY KEY (`uid`, `contact_id`) USING BTREE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='联系人表';
 

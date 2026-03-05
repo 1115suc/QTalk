@@ -192,7 +192,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
                 .collect(Collectors.toList());
         redisComponent.cleanContactUser(sysUser.getUid());
         if (CollectionUtil.isNotEmpty(friendUids)) {
-            redisUtil.lSet(RedisConstant.FRIEND_LIST + sysUser.getUid(), friendUids);
+            redisUtil.lSet(RedisConstant.FRIEND_LIST + sysUser.getUid(), friendUids, TimeConstant.ONE_WEEK);
         }
 
         // 查询群组
@@ -206,14 +206,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
                 .collect(Collectors.toList());
         redisComponent.cleanContactGroup(sysUser.getUid());
         if (CollectionUtil.isNotEmpty(groupIds)) {
-            redisUtil.lSet(RedisConstant.GROUP_LIST + sysUser.getUid(), groupIds);
+            redisUtil.lSet(RedisConstant.GROUP_LIST + sysUser.getUid(), groupIds, TimeConstant.ONE_WEEK);
         }
-
 
         String redisPrefix = LoginTypeEnum.of(loginWhere).getPrefix();
         String token = DigestUtil.md5Hex(sysUser.getUid());
-
-
 
         try {
             if (redisUtil.hasKey(redisPrefix + token)) {

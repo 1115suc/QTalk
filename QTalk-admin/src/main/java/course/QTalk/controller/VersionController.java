@@ -1,12 +1,11 @@
-package course.QTalk.service.controller;
+package course.QTalk.controller;
 
 import cn.hutool.core.convert.Convert;
 import course.QTalk.annotation.VerificationInterceptor;
-import course.QTalk.pojo.po.SysVersion;
 import course.QTalk.pojo.vo.request.UploadVersionVO;
 import course.QTalk.pojo.vo.response.LoadVersionVO;
 import course.QTalk.pojo.vo.response.R;
-import course.QTalk.service.service.SysVersionService;
+import course.QTalk.service.SysVersionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;

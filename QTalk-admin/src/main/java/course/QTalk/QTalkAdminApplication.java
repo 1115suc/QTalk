@@ -1,4 +1,4 @@
-package course.QTalk.service;
+package course.QTalk;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;

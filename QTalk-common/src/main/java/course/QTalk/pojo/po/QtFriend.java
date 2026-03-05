@@ -1,7 +1,5 @@
 package course.QTalk.pojo.po;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
@@ -17,7 +15,7 @@ public class QtFriend {
     /**
      * 自增主键
      */
-    @TableId(type = IdType.AUTO)
+    @TableId
     private Long id;
 
     /**

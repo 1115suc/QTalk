@@ -1,4 +1,4 @@
-package course.QTalk.service.service.impl;
+package course.QTalk.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
@@ -10,7 +10,7 @@ import course.QTalk.pojo.po.SysVersion;
 import course.QTalk.pojo.vo.request.UploadVersionVO;
 import course.QTalk.pojo.vo.response.LoadVersionVO;
 import course.QTalk.pojo.vo.response.R;
-import course.QTalk.service.service.SysVersionService;
+import course.QTalk.service.SysVersionService;
 import course.QTalk.mapper.SysVersionMapper;
 import course.QTalk.util.RedisUtil;
 import lombok.RequiredArgsConstructor;

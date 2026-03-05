@@ -2,7 +2,7 @@ package course.QTalk.pojo.enums;
 
 public enum MessageTypeEnum {
     INIT(0, "", "连接ws获取信息"),
-    ADD_FRIEND(1, "", "添加好友打招呼消息"),
+    ADD_FRIEND(1, "", "我已经添加你为好友，可以开始聊天了"),
     CHAT(2, "", "普通聊天消息"),
     GROUP_CREATE(3, "群组已经创建好，可以和好友一起畅聊了", "群创建成功"),
     CONTACT_APPLY(4, "", "好友申请"),

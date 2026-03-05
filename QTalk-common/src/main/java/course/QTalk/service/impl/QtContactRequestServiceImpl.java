@@ -5,17 +5,22 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.CommonConstant;
 import course.QTalk.exception.QTWebException;
+import course.QTalk.handler.MessageTopicHandler;
+import course.QTalk.mapper.ChatMessageMapper;
+import course.QTalk.mapper.ChatSessionUserMapper;
 import course.QTalk.mapper.QtFriendMapper;
 import course.QTalk.mapper.QtGroupMapper;
 import course.QTalk.mapper.QtGroupMemberMapper;
 import course.QTalk.mapper.SysUserMapper;
 import course.QTalk.pojo.bo.LoadPendingBo;
+import course.QTalk.pojo.dto.MessageSendDto;
 import course.QTalk.pojo.dto.TokenUserDTO;
 import course.QTalk.pojo.enums.AddFriendsEnum;
 import course.QTalk.pojo.enums.ApplyStatus;
@@ -25,8 +30,11 @@ import course.QTalk.pojo.enums.FriendStatus;
 import course.QTalk.pojo.enums.GroupRole;
 import course.QTalk.pojo.enums.GroupStatus;
 import course.QTalk.pojo.enums.LoginTypeEnum;
+import course.QTalk.pojo.enums.MessageTypeEnum;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.pojo.enums.StatusEnum;
+import course.QTalk.pojo.po.ChatMessage;
+import course.QTalk.pojo.po.ChatSessionUser;
 import course.QTalk.pojo.po.QtContactRequest;
 import course.QTalk.pojo.po.QtFriend;
 import course.QTalk.pojo.po.QtGroup;
@@ -43,8 +51,10 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.vo.response.UserSearchInfoVO;
 import course.QTalk.service.QtContactRequestService;
 import course.QTalk.mapper.QtContactRequestMapper;
+import course.QTalk.util.RedisComponent;
 import course.QTalk.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,17 +68,22 @@ import java.util.stream.Collectors;
  * @description 针对表【qt_contact_request(QT联系人申请表)】的数据库操作Service实现
  * @createDate 2026-02-28 11:32:12
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMapper, QtContactRequest>
         implements QtContactRequestService {
 
     private final RedisUtil redisUtil;
+    private final RedisComponent redisComponent;
+    private final MessageTopicHandler messageTopicHandler;
     private final SysUserMapper sysUserMapper;
     private final QtGroupMapper qtGroupMapper;
     private final QtGroupMemberMapper qtGroupMemberMapper;
     private final QtFriendMapper qtFriendMapper;
     private final QtContactRequestMapper qtContactRequestMapper;
+    private final ChatMessageMapper chatMessageMapper;
+    private final ChatSessionUserMapper chatSessionUserMapper;
 
     private TokenUserDTO getTokenUserDTO(String token, Integer type) {
         String redisPrefix = LoginTypeEnum.of(type).getPrefix();
@@ -207,6 +222,14 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         contactRequest.setCreateTime(new Date());
 
         qtContactRequestMapper.insert(contactRequest);
+
+        // TODO 发送消息
+        MessageSendDto messageSendDto = new MessageSendDto();
+        messageSendDto.setContactId(toUid);
+        messageSendDto.setMessageContent(reason);
+        messageSendDto.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
+        messageTopicHandler.sendMessage(messageSendDto);
+
     }
 
     @Override
@@ -280,6 +303,13 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
             contactRequest.setCreateTime(new Date());
 
             qtContactRequestMapper.insert(contactRequest);
+
+            // TODO 发送消息
+            MessageSendDto messageSendDto = new MessageSendDto();
+            messageSendDto.setContactId(qtGroup.getOwnerUid());
+            messageSendDto.setMessageContent(reason);
+            messageSendDto.setMessageType(MessageTypeEnum.ADD_GROUP.getType());
+            messageTopicHandler.sendMessage(messageSendDto);
         }
 
         if (joinType.equals(CommonConstant.THREE)) { // 3:拒绝任何人加入
@@ -419,9 +449,65 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
 
         qtFriendMapper.insert(qtFriendsList);
 
-        // TODO 发送添加好友成功通知
+        // 发送添加好友成功通知
+        if (StrUtil.isAllNotBlank(ownUid, friendUid)) {
+            redisComponent.addContactUser(ownUid, friendUid);
+            redisComponent.addContactUser(friendUid, ownUid);
+        } else {
+            log.error("用户:{} 添加联系人:{} 失败", ownUid, friendUid);
+            throw new QTWebException(ResponseCode.PARAM_ERROR.getMessage());
+        }
 
-        // TODO 创建会话
+        // 初始化会话信息
+        SysUser owner = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUid, ownUid));
+        SysUser friend = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUid, friendUid));
+        String session = DigestUtil.md5Hex(owner.getUid() + ":" + friend.getUid());
+
+        List<ChatSessionUser> chatSessionUsers = new ArrayList<>();
+
+        ChatSessionUser ownChatSessionUser = new ChatSessionUser();
+        ownChatSessionUser.setSessionId(session);
+        ownChatSessionUser.setUid(ownUid);
+        ownChatSessionUser.setContactId(friendUid);
+        ownChatSessionUser.setContactName(friend.getNickName());
+        ownChatSessionUser.setLastMessage(MessageTypeEnum.ADD_FRIEND.getDesc());
+        ownChatSessionUser.setLastReceiveTime(new Date().getTime());
+        chatSessionUsers.add(ownChatSessionUser);
+
+        ChatSessionUser friendChatSessionUser = new ChatSessionUser();
+        friendChatSessionUser.setSessionId(session);
+        friendChatSessionUser.setUid(friendUid);
+        friendChatSessionUser.setContactId(ownUid);
+        friendChatSessionUser.setContactName(owner.getNickName());
+        friendChatSessionUser.setLastMessage(MessageTypeEnum.ADD_FRIEND.getDesc());
+        friendChatSessionUser.setLastReceiveTime(new Date().getTime());
+        chatSessionUsers.add(friendChatSessionUser);
+
+        chatSessionUserMapper.insertOrUpdate(chatSessionUsers);
+
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setSessionId(session);
+        chatMessage.setMessageType(MessageTypeEnum.ADD_FRIEND.getType());
+        chatMessage.setMessageContent(MessageTypeEnum.ADD_FRIEND.getDesc());
+        chatMessage.setSendUserId(ownUid);
+        chatMessage.setSendUserNickname(owner.getNickName());
+        chatMessage.setSendTime(new Date().getTime());
+        chatMessage.setContactId(friendUid);
+        chatMessage.setContactType(ContactType.USER.getCode());
+        chatMessage.setStatus(CommonConstant.ZERO);
+        chatMessageMapper.insert(chatMessage);
+
+        MessageSendDto messageSendDto = new MessageSendDto<>();
+        BeanUtil.copyProperties(chatMessage, messageSendDto);
+        messageTopicHandler.sendMessage(messageSendDto);
+
+        // 发送给申请人
+        messageSendDto.setContactId(ownUid);
+        messageSendDto.setMessageType(MessageTypeEnum.ADD_FRIEND_SELF.getType());
+        messageSendDto.setExtendData(owner);
+        messageTopicHandler.sendMessage(messageSendDto);
     }
 
     // 添加群成员
@@ -473,8 +559,58 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
                 .eq(QtGroup::getGroupId, groupId)
                 .set(QtGroup::getCurrentCount, group.getCurrentCount() + 1));
 
-        // TODO 创建会话
+        if (StrUtil.isAllNotBlank(ownUid, groupId)) {
+            redisComponent.addContactGroup(ownUid, groupId);
+        } else {
+            log.error("用户:{} 加入群:{} 失败", ownUid, groupId);
+            throw new QTWebException(ResponseCode.PARAM_ERROR.getMessage());
+        }
 
-        // TODO 群成员加入通知
+        SysUser qtOwn = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUid, ownUid));
+        QtGroup qtGroup = qtGroupMapper.selectOne(new LambdaQueryWrapper<QtGroup>()
+                .eq(QtGroup::getGroupId, groupId));
+        String session = DigestUtil.md5Hex(groupId);
+
+        List<ChatSessionUser> chatSessionUsers = new ArrayList<>();
+
+        ChatSessionUser ownChatSessionUser = new ChatSessionUser();
+        ownChatSessionUser.setSessionId(session);
+        ownChatSessionUser.setUid(qtOwn.getUid());
+        ownChatSessionUser.setContactId(qtGroup.getGroupId());
+        ownChatSessionUser.setContactName(qtGroup.getName());
+        ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        ownChatSessionUser.setLastReceiveTime(new Date().getTime());
+        chatSessionUsers.add(ownChatSessionUser);
+
+        ChatSessionUser friendChatSessionUser = new ChatSessionUser();
+        friendChatSessionUser.setSessionId(session);
+        friendChatSessionUser.setUid(qtGroup.getGroupId());
+        friendChatSessionUser.setContactId(qtOwn.getUid());
+        friendChatSessionUser.setContactName(qtOwn.getNickName());
+        friendChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        friendChatSessionUser.setLastReceiveTime(new Date().getTime());
+        chatSessionUsers.add(friendChatSessionUser);
+
+        chatSessionUserMapper.insertOrUpdate(chatSessionUsers);
+
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setSessionId(session);
+        chatMessage.setMessageType(MessageTypeEnum.ADD_GROUP.getType());
+        chatMessage.setMessageContent(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        chatMessage.setSendUserId(qtOwn.getUid());
+        chatMessage.setSendUserNickname(qtOwn.getNickName());
+        chatMessage.setSendTime(new Date().getTime());
+        chatMessage.setContactId(qtGroup.getGroupId());
+        chatMessage.setContactType(ContactType.GROUP.getCode());
+        chatMessage.setStatus(CommonConstant.ZERO);
+        chatMessageMapper.insert(chatMessage);
+
+        MessageSendDto messageSendDto = new MessageSendDto();
+        BeanUtil.copyProperties(chatMessage, messageSendDto);
+        messageSendDto.setMemberCount(qtGroup.getCurrentCount());
+        messageSendDto.setContactNickName(qtGroup.getName());
+
+        messageTopicHandler.sendMessage(messageSendDto);
     }
 }

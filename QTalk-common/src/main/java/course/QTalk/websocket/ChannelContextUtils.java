@@ -5,7 +5,6 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import cn.hutool.system.UserInfo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import course.QTalk.constant.CommonConstant;
@@ -68,7 +67,7 @@ public class ChannelContextUtils {
         // 获取 Channel 的唯一标识符（格式：[id: 0x12345678]）
         String channelId = channel.id().toString();
         log.info("用户 id：{}", uid);
-        log.info("channelId：{}", channelId);
+            log.info("channelId：{}", channelId);
 
         AttributeKey attributeKey = null;
         // 检查该 channelId 是否已存在对应的 AttributeKey
@@ -85,6 +84,7 @@ public class ChannelContextUtils {
 
         // 获取用户所属的群组列表，并将当前 Channel 加入到对应的群组频道组中
         List<Object> contactGroupList = redisComponent.getContactGroupList(uid);
+
         if (ObjectUtil.isNotNull(contactGroupList)) {
             // 遍历用户的群组列表，将当前连接添加到每个群组的 ChannelGroup 中
             for (Object groupId : contactGroupList) {
@@ -196,6 +196,11 @@ public class ChannelContextUtils {
         userChannel.writeAndFlush(
                 new TextWebSocketFrame(JSONUtil.toJsonPrettyStr(messageSendDto))
         );
+    }
+
+    public void addUserToGroup(String userId, String groupId) {
+        Channel channel = USER_CONTEXT_MAP.get(userId);
+        addChannelToGroup(groupId, channel);
     }
 
     private void addChannelToGroup(String groupId, Channel channel) {

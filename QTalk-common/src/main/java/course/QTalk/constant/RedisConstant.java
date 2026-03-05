@@ -25,4 +25,6 @@ public class RedisConstant {
     public static final String CONTACT_LIST = PROJECT_NAME + "Contact:";
     public static final String GROUP_LIST = CONTACT_LIST + "Groups:";
     public static final String FRIEND_LIST = CONTACT_LIST + "Friends:";
+
+    public static final String REDISSION_MESSAGE_TOPIC = PROJECT_NAME + "Message";
 }

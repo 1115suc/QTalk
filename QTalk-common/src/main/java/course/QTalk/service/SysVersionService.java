@@ -1,4 +1,4 @@
-package course.QTalk.service.service;
+package course.QTalk.service;
 
 import course.QTalk.pojo.po.SysVersion;
 import com.baomidou.mybatisplus.extension.service.IService;

@@ -1,5 +1,7 @@
 package course.QTalk.pojo.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -10,21 +12,20 @@ import com.baomidou.mybatisplus.annotation.TableName;
 @TableName(value ="chat_session_user")
 public class ChatSessionUser {
     /**
-     * 会话 id
-     */
-    @TableId
-    private String sessionId;
-
-    /**
      * 用户 id
      */
-
+    @TableId(type = IdType.INPUT)
     private String uid;
 
     /**
      * 联系人 id
      */
     private String contactId;
+
+    /**
+     * 会话 id
+     */
+    private String sessionId;
 
     /**
      * 联系人名称

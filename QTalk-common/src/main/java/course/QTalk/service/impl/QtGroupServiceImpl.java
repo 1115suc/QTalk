@@ -1,9 +1,11 @@
 package course.QTalk.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,18 +13,28 @@ import course.QTalk.constant.CommonConstant;
 import course.QTalk.constant.MinIOConstant;
 import course.QTalk.exception.QTException;
 import course.QTalk.exception.QTWebException;
+import course.QTalk.handler.MessageTopicHandler;
+import course.QTalk.mapper.ChatMessageMapper;
+import course.QTalk.mapper.ChatSessionUserMapper;
 import course.QTalk.mapper.QtContactRequestMapper;
 import course.QTalk.mapper.QtGroupMemberMapper;
+import course.QTalk.mapper.SysUserMapper;
 import course.QTalk.minio.constant.MinioErrorConstant;
 import course.QTalk.minio.exception.MinioException;
 import course.QTalk.minio.model.FileUploadResponse;
 import course.QTalk.pojo.bo.GroupMemberInfoBO;
+import course.QTalk.pojo.dto.MessageSendDto;
 import course.QTalk.pojo.dto.TokenUserDTO;
+import course.QTalk.pojo.enums.ContactType;
 import course.QTalk.pojo.enums.GroupRole;
 import course.QTalk.pojo.enums.GroupStatus;
 import course.QTalk.pojo.enums.LoginTypeEnum;
+import course.QTalk.pojo.enums.MessageTypeEnum;
+import course.QTalk.pojo.po.ChatMessage;
+import course.QTalk.pojo.po.ChatSessionUser;
 import course.QTalk.pojo.po.QtGroup;
 import course.QTalk.pojo.po.QtGroupMember;
+import course.QTalk.pojo.po.SysUser;
 import course.QTalk.pojo.vo.request.CreatGroupVO;
 import course.QTalk.pojo.vo.request.UpdateGroupInfoVO;
 import course.QTalk.pojo.vo.response.GroupDetailInfoVO;
@@ -31,7 +43,9 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.service.QtGroupService;
 import course.QTalk.mapper.QtGroupMapper;
+import course.QTalk.util.RedisComponent;
 import course.QTalk.util.RedisUtil;
+import course.QTalk.websocket.ChannelContextUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import course.QTalk.minio.service.MinIOFileService;
@@ -39,6 +53,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,10 +72,16 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
     private final static String separator = "/";
 
     private final RedisUtil redisUtil;
+    private final RedisComponent redisComponent;
+    private final ChannelContextUtils channelContextUtils;
+    private final MessageTopicHandler messageTopicHandler;
     private final MinIOFileService minIOFileService;
+    private final SysUserMapper sysUserMapper;
     private final QtGroupMapper qtGroupMapper;
     private final QtGroupMemberMapper qtGroupMemberMapper;
     private final QtContactRequestMapper qtContactRequestMapper;
+    private final ChatMessageMapper chatMessageMapper;
+    private final ChatSessionUserMapper chatSessionUserMapper;
 
     private TokenUserDTO getTokenUserDTO(String token, Integer type) {
         String loginPrefix = LoginTypeEnum.of(type).getPrefix();
@@ -125,7 +146,52 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
 
         // TODO 创建会话
 
-        // TODO 发送消息
+        SysUser qtOwn = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUid, tokenUserDTO.getUid()));
+        String session = DigestUtil.md5Hex(groupId);
+
+        List<ChatSessionUser> chatSessionUsers = new ArrayList<>();
+        ChatSessionUser ownChatSessionUser = new ChatSessionUser();
+        ownChatSessionUser.setSessionId(session);
+        ownChatSessionUser.setUid(qtOwn.getUid());
+        ownChatSessionUser.setContactId(qtGroup.getGroupId());
+        ownChatSessionUser.setContactName(qtGroup.getName());
+        ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        ownChatSessionUser.setLastReceiveTime(new Date().getTime());
+        chatSessionUsers.add(ownChatSessionUser);
+
+        ChatSessionUser friendChatSessionUser = new ChatSessionUser();
+        friendChatSessionUser.setSessionId(session);
+        friendChatSessionUser.setUid(qtGroup.getGroupId());
+        friendChatSessionUser.setContactId(qtOwn.getUid());
+        friendChatSessionUser.setContactName(qtOwn.getNickName());
+        ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        ownChatSessionUser.setLastReceiveTime(new Date().getTime());
+        chatSessionUsers.add(friendChatSessionUser);
+
+        chatSessionUserMapper.insertOrUpdate(chatSessionUsers);
+
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setSessionId(session);
+        chatMessage.setMessageType(MessageTypeEnum.ADD_GROUP.getType());
+        chatMessage.setMessageContent(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        chatMessage.setSendUserId(qtOwn.getUid());
+        chatMessage.setSendUserNickname(qtOwn.getNickName());
+        chatMessage.setSendTime(new Date().getTime());
+        chatMessage.setContactId(qtGroup.getGroupId());
+        chatMessage.setContactType(ContactType.GROUP.getCode());
+        chatMessage.setStatus(CommonConstant.ZERO);
+        chatMessageMapper.insert(chatMessage);
+
+        redisComponent.addContactGroup(qtOwn.getUid(), groupId);
+        channelContextUtils.addUserToGroup(qtOwn.getUid(), groupId);
+
+        MessageSendDto messageSendDto = new MessageSendDto();
+        BeanUtil.copyProperties(chatMessage, messageSendDto);
+        messageSendDto.setMemberCount(qtGroup.getCurrentCount());
+        messageSendDto.setContactNickName(qtGroup.getName());
+
+        messageTopicHandler.sendMessage(messageSendDto);
 
         return R.ok(ResponseCode.GROUP_CREATE_SUCCESS.getMessage());
     }
