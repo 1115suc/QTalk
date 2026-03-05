@@ -24,10 +24,10 @@ import java.util.concurrent.TimeUnit;
 public class RedisUtil {
 
 	private final RedisTemplate<String, Object> redisTemplate;
- 
+
 	/**
 	 * 指定缓存失效时间
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @param time 时间(秒)，当time > 0时设置过期时间
 	 * @return 操作是否成功
@@ -43,20 +43,20 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 根据key获取过期时间
-	 * 
+	 *
 	 * @param key 键，不能为null
 	 * @return 时间(秒)，返回0表示永久有效
 	 */
 	public long getExpire(String key) {
 		return redisTemplate.getExpire(key, TimeUnit.SECONDS);
 	}
- 
+
 	/**
 	 * 判断key是否存在
-	 * 
+	 *
 	 * @param key 键
 	 * @return true 存在 false不存在
 	 */
@@ -68,10 +68,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 删除缓存
-	 * 
+	 *
 	 * @param key 可以传一个值或多个值
 	 */
 	public void del(String... key) {
@@ -85,10 +85,10 @@ public class RedisUtil {
 	}
 // ... existing code ...
 
- 
+
 	/**
 	 * 普通缓存放入
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @param value 缓存值
 	 * @return true 成功 false失败
@@ -102,37 +102,37 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 普通缓存获取
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @return 缓存值，如果key为null则返回null
 	 */
 	public Object get(String key) {
 		return key == null ? null : redisTemplate.opsForValue().get(key);
 	}
- 
+
 	/**
 	 * 普通多键值缓存获取
-	 * 
+	 *
 	 * @param key 键列表
 	 * @return 值列表，如果key为null则返回null
 	 */
 	public List<Object> multiGet(List<String> key) {
 		return key == null ? null : redisTemplate.opsForValue().multiGet(key);
 	}
- 
+
 	/**
 	 * 获取原值并设置新值
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @param value 新值
 	 * @return 原有值
 	 */
 	public Object getAndSet(String key, Object value) {
 		Object t = null;
- 
+
 		if (null == key) {
 			return null;
 		}
@@ -141,13 +141,13 @@ public class RedisUtil {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
- 
+
 		return t;
 	}
- 
+
 	/**
 	 * 普通缓存放入并设置时间
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @param value 缓存值
 	 * @param time 时间(秒)，time > 0时设置过期时间，否则设置为永久有效
@@ -166,10 +166,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 递增
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @param delta 要增加的数量(必须大于0)
 	 * @return 递增后的值
@@ -180,10 +180,10 @@ public class RedisUtil {
 		}
 		return redisTemplate.opsForValue().increment(key, delta);
 	}
- 
+
 	/**
 	 * 递减
-	 * 
+	 *
 	 * @param key 缓存键
 	 * @param delta 要减少的数量(必须大于0)
 	 * @return 递减后的值
@@ -194,11 +194,11 @@ public class RedisUtil {
 		}
 		return redisTemplate.opsForValue().increment(key, -delta);
 	}
- 
+
 	// ================================Map=================================
 	/**
 	 * HashGet
-	 * 
+	 *
 	 * @param key 键 不能为null
 	 * @param item 项 不能为null
 	 * @return 值
@@ -206,10 +206,10 @@ public class RedisUtil {
 	public Object hget(String key, String item) {
 		return redisTemplate.opsForHash().get(key, item);
 	}
- 
+
 	/**
 	 * 获取hashKey对应的所有键值
-	 * 
+	 *
 	 * @param key 键
 	 * @return 对应的多个键值
 	 */
@@ -217,10 +217,10 @@ public class RedisUtil {
 		HashOperations<String, String, Object> ho = redisTemplate.opsForHash();
 		return ho.entries(key);
 	}
- 
+
 	/**
 	 * HashSet
-	 * 
+	 *
 	 * @param key 键
 	 * @param map 对应多个键值
 	 * @return true 成功 false 失败
@@ -234,10 +234,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * HashSet 并设置时间
-	 * 
+	 *
 	 * @param key 键
 	 * @param map 对应多个键值
 	 * @param time 时间(秒)
@@ -255,10 +255,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 向一张hash表中放入数据,如果不存在将创建
-	 * 
+	 *
 	 * @param key 键
 	 * @param item 项
 	 * @param value 值
@@ -273,10 +273,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 向一张hash表中放入数据,如果不存在将创建
-	 * 
+	 *
 	 * @param key 键
 	 * @param item 项
 	 * @param value 值
@@ -295,20 +295,20 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 删除hash表中的值
-	 * 
+	 *
 	 * @param key 键 不能为null
 	 * @param item 项 可以使多个 不能为null
 	 */
 	public void hdel(String key, Object... item) {
 		redisTemplate.opsForHash().delete(key, item);
 	}
- 
+
 	/**
 	 * 判断hash表中是否有该项的值
-	 * 
+	 *
 	 * @param key 键 不能为null
 	 * @param item 项 不能为null
 	 * @return true 存在 false不存在
@@ -316,10 +316,10 @@ public class RedisUtil {
 	public boolean hHasKey(String key, String item) {
 		return redisTemplate.opsForHash().hasKey(key, item);
 	}
- 
+
 	/**
 	 * hash递增 如果不存在,就会创建一个 并把新增后的值返回
-	 * 
+	 *
 	 * @param key 键
 	 * @param item 项
 	 * @param by 要增加几(大于0)
@@ -328,10 +328,10 @@ public class RedisUtil {
 	public double hincr(String key, String item, double by) {
 		return redisTemplate.opsForHash().increment(key, item, by);
 	}
- 
+
 	/**
 	 * hash递减
-	 * 
+	 *
 	 * @param key 键
 	 * @param item 项
 	 * @param by 要减少记(小于0)
@@ -340,11 +340,11 @@ public class RedisUtil {
 	public double hdecr(String key, String item, double by) {
 		return redisTemplate.opsForHash().increment(key, item, -by);
 	}
- 
+
 	// ============================set=============================
 	/**
 	 * 根据key获取Set中的所有值
-	 * 
+	 *
 	 * @param key 键
 	 * @return Set中的所有值
 	 */
@@ -356,10 +356,10 @@ public class RedisUtil {
 			return null;
 		}
 	}
- 
+
 	/**
 	 * 根据value从一个set中查询,是否存在
-	 * 
+	 *
 	 * @param key 键
 	 * @param value 值
 	 * @return true 存在 false不存在
@@ -372,10 +372,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 将数据放入set缓存
-	 * 
+	 *
 	 * @param key 键
 	 * @param values 值 可以是多个
 	 * @return 成功个数
@@ -388,10 +388,10 @@ public class RedisUtil {
 			return 0;
 		}
 	}
- 
+
 	/**
 	 * 将set数据放入缓存
-	 * 
+	 *
 	 * @param key 键
 	 * @param time 时间(秒)
 	 * @param values 值 可以是多个
@@ -408,10 +408,10 @@ public class RedisUtil {
 			return 0;
 		}
 	}
- 
+
 	/**
 	 * 获取set缓存的长度
-	 * 
+	 *
 	 * @param key 键
 	 * @return set缓存的长度
 	 */
@@ -423,10 +423,10 @@ public class RedisUtil {
 			return 0;
 		}
 	}
- 
+
 	/**
 	 * 移除值为value的元素
-	 * 
+	 *
 	 * @param key 键
 	 * @param values 值 可以是多个
 	 * @return 移除的个数
@@ -441,10 +441,10 @@ public class RedisUtil {
 		}
 	}
 	// ===============================list=================================
- 
+
 	/**
 	 * 获取list缓存的内容
-	 * 
+	 *
 	 * @param key 键
 	 * @param start 开始位置
 	 * @param end 结束位置，0 到 -1代表所有值
@@ -458,10 +458,11 @@ public class RedisUtil {
 			return null;
 		}
 	}
- 
+
+
 	/**
 	 * 获取list缓存的长度
-	 * 
+	 *
 	 * @param key 键
 	 * @return list缓存的长度
 	 */
@@ -473,10 +474,10 @@ public class RedisUtil {
 			return 0;
 		}
 	}
- 
+
 	/**
 	 * 通过索引 获取list中的值
-	 * 
+	 *
 	 * @param key 键
 	 * @param index 索引，index>=0时， 0 表头，1 第二个元素，依次类推；index<0时，-1，表尾，-2倒数第二个元素，依次类推
 	 * @return 索引对应的值
@@ -489,10 +490,10 @@ public class RedisUtil {
 			return null;
 		}
 	}
- 
+
 	/**
 	 * 将list放入缓存
-	 * 
+	 *
 	 * @param key 键
 	 * @param value 值
 	 * @return 操作是否成功
@@ -506,10 +507,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 将list放入缓存并设置过期时间
-	 * 
+	 *
 	 * @param key 键
 	 * @param value 值
 	 * @param time 时间(秒)，time > 0时设置过期时间
@@ -526,10 +527,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 将list集合放入缓存
-	 * 
+	 *
 	 * @param key 键
 	 * @param value 值列表
 	 * @return 操作是否成功
@@ -543,10 +544,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 将list集合放入缓存并设置过期时间
-	 * 
+	 *
 	 * @param key 键
 	 * @param value 值列表
 	 * @param time 时间(秒)，time > 0时设置过期时间
@@ -563,10 +564,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 根据索引修改list中的某条数据
-	 * 
+	 *
 	 * @param key 键
 	 * @param index 索引
 	 * @param value 值
@@ -581,10 +582,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 移除N个值为value的元素
-	 * 
+	 *
 	 * @param key 键
 	 * @param count 移除数量
 	 * @param value 值
@@ -599,16 +600,16 @@ public class RedisUtil {
 			return 0;
 		}
 	}
- 
+
 	/**
 	 * 使用事务批量删除keys
-	 * 
+	 *
 	 * @param keys 要删除的key列表
 	 * @return 操作是否成功
 	 */
 	public boolean delByTransaction(List<String> keys) {
 		try {
- 
+
 			String res = redisTemplate.execute(new SessionCallback<String>() {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				@Override
@@ -623,22 +624,22 @@ public class RedisUtil {
 					}
 				}
 			});
- 
+
 			if ("OK".equals(res)) {
 				return true;
 			}
- 
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
- 
+
 		return false;
 	}
- 
+
 	// ===================================zset================================
 	/**
 	 * 添加成员和分数
-	 * 
+	 *
 	 * @param key 键
 	 * @param member 成员
 	 * @param score 分数
@@ -652,10 +653,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 通过指定下标区域[start,stop]获取成员集合
-	 * 
+	 *
 	 * @param key 键
 	 * @param start 开始下标
 	 * @param end 结束下标
@@ -669,10 +670,10 @@ public class RedisUtil {
 			return null;
 		}
 	}
- 
+
 	/**
 	 * 删除所有分数在[min,max]范围内的成员
-	 * 
+	 *
 	 * @param key 键
 	 * @param min 最小分数
 	 * @param max 最大分数
@@ -687,10 +688,10 @@ public class RedisUtil {
 			return false;
 		}
 	}
- 
+
 	/**
 	 * 删除指定的一个或多个成员
-	 * 
+	 *
 	 * @param key 键
 	 * @param member 成员
 	 * @return 操作是否成功

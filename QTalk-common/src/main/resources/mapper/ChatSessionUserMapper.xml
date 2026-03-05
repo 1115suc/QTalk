@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="course.QTalk.mapper.ChatSessionUserMapper">
+
+    <resultMap id="BaseResultMap" type="course.QTalk.pojo.po.ChatSessionUser">
+        <id property="sessionId" column="session_id"/>
+        <result property="uid" column="uid"/>
+        <result property="contactId" column="contact_id"/>
+        <result property="contactName" column="contact_name"/>
+        <result property="lastMessage" column="last_message"/>
+        <result property="lastReceiveTime" column="last_receive_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        session_id,uid,contact_id,contact_name,last_message,last_receive_time
+    </sql>
+</mapper>

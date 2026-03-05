@@ -9,6 +9,7 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.properties.EmailConfigProperties;
 import course.QTalk.service.EmailCodeService;
+import course.QTalk.service.base.BaseService;
 import course.QTalk.util.RedisUtil;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import static course.QTalk.service.base.BaseService.verifyCheckCode;
 
 @Slf4j
 @Service("emailCodeService")
@@ -38,7 +37,7 @@ public class EmailCodeServiceImpl implements EmailCodeService {
         String sessionId = vo.getSessionId();
         String checkCode = vo.getCheckCode();
 
-        verifyCheckCode(checkCode, sessionId, redisUtil);
+        BaseService.verifyCheckCode(checkCode, sessionId, redisUtil);
 
         String email = vo.getEmail();
         if (redisUtil.hasKey(RedisConstant.EMAIL_CODE + email)) {

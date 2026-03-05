@@ -2,22 +2,14 @@ package course.QTalk.service;
 
 import course.QTalk.pojo.po.SysUser;
 import com.baomidou.mybatisplus.extension.service.IService;
-import course.QTalk.pojo.vo.request.ApplyJoinContactVO;
 import course.QTalk.pojo.vo.request.EmailCodeLoginVO;
 import course.QTalk.pojo.vo.request.EmailLoginVO;
 import course.QTalk.pojo.vo.request.EmailPasswordLoginVO;
-import course.QTalk.pojo.vo.request.HandleFormApplyVO;
-import course.QTalk.pojo.vo.request.LoadPendingRequestsVO;
 import course.QTalk.pojo.vo.request.ResetPasswordVO;
 import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
-import course.QTalk.pojo.vo.request.UserSearchVO;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.vo.response.UserLoginVO;
-import course.QTalk.pojo.vo.response.UserSearchInfoVO;
-import course.QTalk.pojo.vo.response.LoadPendingResponseVO;
-
-import java.util.List;
 
 /**
 * @author 1115suc

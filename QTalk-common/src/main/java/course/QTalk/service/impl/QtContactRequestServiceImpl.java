@@ -45,7 +45,6 @@ import course.QTalk.service.QtContactRequestService;
 import course.QTalk.mapper.QtContactRequestMapper;
 import course.QTalk.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
-import org.apache.ibatis.jdbc.Null;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

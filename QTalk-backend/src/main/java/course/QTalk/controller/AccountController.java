@@ -14,8 +14,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "账号管理", description = "账号相关接口，包括验证码获取、账号注册、登录等功能")
 public class AccountController {
-    private static final Logger log = LoggerFactory.getLogger(AccountController.class);
+
     private final SysUserService sysUserService;
     private final EmailCodeService emailCodeService;
 
@@ -76,7 +74,6 @@ public class AccountController {
     )
     @PostMapping("/emailCodeLogin")
     public R<UserLoginVO> emailCodeLogin(@RequestBody EmailCodeLoginVO emailCodeLoginVo) {
-        log.info("邮箱验证码登录请求参数: {}", emailCodeLoginVo);
         return sysUserService.emailCodeLogin(emailCodeLoginVo);
     }
 
