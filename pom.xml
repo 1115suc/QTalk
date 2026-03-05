@@ -31,6 +31,7 @@
         <mysql.version>8.3.0</mysql.version>
         <jjwt.version>0.12.6</jjwt.version>
         <redisson.version>3.35.0</redisson.version>
+        <netty.version>4.1.109.Final</netty.version>
         <aspectj.version>1.9.22</aspectj.version>
         <caffeine.version>3.1.8</caffeine.version>
         <aliyun.sdk.oss>3.17.4</aliyun.sdk.oss>
@@ -129,6 +130,28 @@
                 <artifactId>aspectjweaver</artifactId>
                 <version>${aspectj.version}</version>
             </dependency>
+
+            <!-- Netty 核心依赖 -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <!-- Netty 编解码器（可选，用于协议处理） -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <!-- Netty 传输层（可选） -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
             <!--jvm进程缓存-->
             <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
