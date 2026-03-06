@@ -1,4 +1,4 @@
-package course.QTalk.util;
+package course.QTalk.handler;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
@@ -10,6 +10,7 @@ import course.QTalk.exception.QTWebException;
 import course.QTalk.pojo.dto.TokenUserDTO;
 import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.pojo.enums.ResponseCode;
+import course.QTalk.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

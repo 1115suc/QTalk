@@ -25,7 +25,7 @@ import course.QTalk.pojo.vo.request.SendMessageVO;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.service.ChatMessageService;
 import course.QTalk.mapper.ChatMessageMapper;
-import course.QTalk.util.RedisComponent;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.util.ToolUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -204,8 +204,6 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
 
         chatSessionUserMapper.insertOrUpdate(collect);
         chatMessageMapper.insertOrUpdate(chatMessage);
-
-
 
         List<ChatMessage> chatMessages = chatMessageMapper.selectList(new LambdaQueryWrapper<ChatMessage>()
                 .eq(ChatMessage::getSendTime, chatMessage.getSendTime()));

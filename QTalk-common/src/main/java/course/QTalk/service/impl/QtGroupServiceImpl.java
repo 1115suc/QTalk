@@ -5,7 +5,6 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.CommonConstant;
@@ -27,7 +26,6 @@ import course.QTalk.pojo.dto.TokenUserDTO;
 import course.QTalk.pojo.enums.ContactType;
 import course.QTalk.pojo.enums.GroupRole;
 import course.QTalk.pojo.enums.GroupStatus;
-import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.pojo.enums.MessageTypeEnum;
 import course.QTalk.pojo.po.ChatMessage;
 import course.QTalk.pojo.po.ChatSessionUser;
@@ -42,7 +40,7 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.service.QtGroupService;
 import course.QTalk.mapper.QtGroupMapper;
-import course.QTalk.util.RedisComponent;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.util.RedisUtil;
 import course.QTalk.util.ToolUtils;
 import course.QTalk.websocket.ChannelContextUtils;
@@ -82,17 +80,10 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
     private final ChatMessageMapper chatMessageMapper;
     private final ChatSessionUserMapper chatSessionUserMapper;
 
-    private TokenUserDTO getTokenUserDTO(String token, Integer type) {
-        String loginPrefix = LoginTypeEnum.of(type).getPrefix();
-        String tokenLoginInfo = (String) redisUtil.get(loginPrefix + token);
-        TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
-        return tokenUserDTO;
-    }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R createGroup(String token, Integer type, CreatGroupVO creatGroupVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public R createGroup(String token, String type, CreatGroupVO creatGroupVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         String groupId = "Q" + RandomUtil.randomNumbers(9);
         String imgPath = null;
@@ -186,8 +177,8 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R updateGroupInfo(String token, Integer type, UpdateGroupInfoVO updateGroupInfoVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public R updateGroupInfo(String token, String type, UpdateGroupInfoVO updateGroupInfoVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
         String uid = tokenUserDTO.getUid();
         String groupId = updateGroupInfoVO.getGroupId();
 
@@ -258,8 +249,8 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
     }
 
     @Override
-    public R<List<MyGroupVO>> queryMyGroups(String token, Integer type) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public R<List<MyGroupVO>> queryMyGroups(String token, String type) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         String uid = tokenUserDTO.getUid();
         LambdaQueryWrapper<QtGroupMember> queryWrapper = new LambdaQueryWrapper<>();
@@ -291,7 +282,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
 
 
     @Override
-    public R<GroupDetailInfoVO> getGroupDetailInfo(String token, Integer type, String groupId) {
+    public R<GroupDetailInfoVO> getGroupDetailInfo(String token, String type, String groupId) {
         // 校验是否存在群聊
         LambdaQueryWrapper<QtGroup> groupQuery = new LambdaQueryWrapper<>();
         groupQuery.eq(QtGroup::getGroupId, groupId);
@@ -302,7 +293,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
             return R.error(ResponseCode.GROUP_NOT_EXISTS.getCode(), ResponseCode.GROUP_NOT_EXISTS.getMessage());
         }
 
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         // 校验用户是否在群聊中
         String userId = tokenUserDTO.getUid();

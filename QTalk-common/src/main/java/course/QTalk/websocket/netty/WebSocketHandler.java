@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import course.QTalk.exception.QTWebException;
 import course.QTalk.pojo.dto.TokenUserDTO;
 import course.QTalk.pojo.enums.ResponseCode;
-import course.QTalk.util.RedisComponent;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.util.RedisUtil;
 import course.QTalk.websocket.ChannelContextUtils;
 import io.netty.channel.Channel;

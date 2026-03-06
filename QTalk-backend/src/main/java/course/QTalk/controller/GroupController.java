@@ -49,9 +49,8 @@ public class GroupController {
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @ModelAttribute CreatGroupVO creatGroupVO
     ) {
-        Integer type = Convert.toInt(loginType);
 
-        return groupService.createGroup(token, type, creatGroupVO);
+        return groupService.createGroup(token, loginType, creatGroupVO);
     }
 
     @Operation(
@@ -70,8 +69,7 @@ public class GroupController {
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @ModelAttribute UpdateGroupInfoVO updateGroupInfoVO
     ) {
-        Integer type = Convert.toInt(loginType);
-        return groupService.updateGroupInfo(token, type, updateGroupInfoVO);
+        return groupService.updateGroupInfo(token, loginType, updateGroupInfoVO);
     }
 
     @Operation(
@@ -89,9 +87,8 @@ public class GroupController {
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType
     ) {
-        Integer type = Convert.toInt(loginType);
 
-        return groupService.queryMyGroups(token, type);
+        return groupService.queryMyGroups(token, loginType);
     }
 
     @Operation(
@@ -110,7 +107,7 @@ public class GroupController {
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @NotBlank(message = "群组ID不能为空") @PathVariable String groupId) {
-        Integer type = Convert.toInt(loginType);
-        return groupService.getGroupDetailInfo(token, type, groupId);
+
+        return groupService.getGroupDetailInfo(token, loginType, groupId);
     }
 }

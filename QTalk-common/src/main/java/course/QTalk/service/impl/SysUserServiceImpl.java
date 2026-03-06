@@ -4,6 +4,7 @@ import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.captcha.generator.RandomGenerator;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -35,9 +36,9 @@ import course.QTalk.pojo.vo.response.UserLoginVO;
 import course.QTalk.service.EmailCodeService;
 import course.QTalk.service.SysUserService;
 import course.QTalk.mapper.SysUserMapper;
-import course.QTalk.service.base.BaseService;
+import course.QTalk.handler.VerifyHandler;
 import course.QTalk.util.IdWorker;
-import course.QTalk.util.RedisComponent;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -143,7 +144,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         String checkCode = emailPasswordLoginVo.getCheckCode();
         String sessionId = emailPasswordLoginVo.getSessionId();
 
-        BaseService.verifyCheckCode(checkCode, sessionId, redisUtil);
+        VerifyHandler.verifyCheckCode(checkCode, sessionId, redisUtil);
 
         return processLogin(emailPasswordLoginVo.getEmail(), emailPasswordLoginVo.getLoginWhere(), emailPasswordLoginVo.getPassword());
     }
@@ -248,9 +249,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     }
 
     @Override
-    public R logout(String token, Integer loginType) {
+    public R logout(String token, String loginType) {
         try {
-            redisUtil.del(LoginTypeEnum.of(loginType).getPrefix() + token);
+            Integer type = Convert.toInt(loginType);
+            redisUtil.del(LoginTypeEnum.of(type).getPrefix() + token);
             return R.ok(ResponseCode.LOGOUT_SUCCESS.getMessage());
         } catch (Exception e) {
             throw new QTWebException(ResponseCode.ERROR.getMessage());
@@ -259,14 +261,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     }
 
     @Override
-    public R resetPassword(String token, Integer loginType, ResetPasswordVO resetVo) {
+    public R resetPassword(String token, String loginType, ResetPasswordVO resetVo) {
         String emailCode = resetVo.getEmailCode();
         emailCodeService.checkCode(resetVo.getEmail(), emailCode);
 
-        String redisPrefix = LoginTypeEnum.of(loginType).getPrefix();
         try {
-            Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
-            TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
+            TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(loginType, token);
 
             // 获取用户信息
             String uid = tokenUserDTO.getUid();
@@ -297,11 +297,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     }
 
     @Override
-    public R updateUserInfo(String token, Integer loginType, UpdateUserInfoVO updateUserInfoVO) {
-        String redisPrefix = LoginTypeEnum.of(loginType).getPrefix();
+    public R updateUserInfo(String token, String loginType, UpdateUserInfoVO updateUserInfoVO) {
         try {
-            Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
-            TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
+            TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(loginType, token);
 
             // 获取用户信息
             String uid = tokenUserDTO.getUid();

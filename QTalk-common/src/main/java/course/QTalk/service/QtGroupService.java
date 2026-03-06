@@ -17,11 +17,11 @@ import java.util.List;
 */
 public interface QtGroupService extends IService<QtGroup> {
 
-    R createGroup(String token, Integer type, CreatGroupVO creatGroupVO);
+    R createGroup(String token, String type, CreatGroupVO creatGroupVO);
 
-    R updateGroupInfo(String token, Integer type, UpdateGroupInfoVO updateGroupInfoVO);
+    R updateGroupInfo(String token, String type, UpdateGroupInfoVO updateGroupInfoVO);
 
-    R<List<MyGroupVO>> queryMyGroups(String token, Integer type);
+    R<List<MyGroupVO>> queryMyGroups(String token, String type);
 
-    R<GroupDetailInfoVO> getGroupDetailInfo(String token, Integer type, String groupId);
+    R<GroupDetailInfoVO> getGroupDetailInfo(String token, String type, String groupId);
 }

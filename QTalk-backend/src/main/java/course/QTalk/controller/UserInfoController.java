@@ -40,8 +40,7 @@ public class UserInfoController {
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @RequestBody UpdateUserInfoVO updateUserInfoVO
     ) {
-        Integer type = Convert.toInt(loginType);
-        return sysUserService.updateUserInfo(token, type, updateUserInfoVO);
+        return sysUserService.updateUserInfo(token, loginType, updateUserInfoVO);
     }
 
     // TODO 实名认证

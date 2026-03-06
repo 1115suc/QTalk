@@ -21,7 +21,7 @@ import course.QTalk.pojo.po.ChatMessage;
 import course.QTalk.pojo.po.ChatSessionUser;
 import course.QTalk.pojo.po.QtContactRequest;
 import course.QTalk.pojo.po.SysUser;
-import course.QTalk.util.RedisComponent;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.util.RedisUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;

@@ -1,6 +1,7 @@
 package course.QTalk.controller;
 
 import cn.hutool.core.convert.Convert;
+import course.QTalk.annotation.VerificationInterceptor;
 import course.QTalk.pojo.vo.request.*;
 import course.QTalk.pojo.vo.response.CheckCodeVo;
 import course.QTalk.pojo.vo.response.R;
@@ -86,11 +87,11 @@ public class AccountController {
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
+    @VerificationInterceptor(checkLogin = false)
     @DeleteMapping()
     public R logout(@NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
                     @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String LoginType) {
-        Integer loginType = Convert.toInt(LoginType);
-        return sysUserService.logout(token, loginType);
+        return sysUserService.logout(token, LoginType);
     }
 
     @Operation(
@@ -102,11 +103,11 @@ public class AccountController {
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
             @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
     })
+    @VerificationInterceptor(checkLogin = false)
     @PutMapping()
     public R resetPassword(@NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
                            @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String LoginType,
                            @RequestBody ResetPasswordVO resetVo) {
-        Integer loginType = Convert.toInt(LoginType);
-        return sysUserService.resetPassword(token, loginType, resetVo);
+        return sysUserService.resetPassword(token, LoginType, resetVo);
     }
 }

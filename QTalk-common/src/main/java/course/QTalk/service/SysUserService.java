@@ -22,13 +22,13 @@ public interface SysUserService extends IService<SysUser> {
     // 用户注册接口
     R register(EmailLoginVO emailLoginVo);
     // 更新用户信息
-    R updateUserInfo(String token, Integer type, UpdateUserInfoVO updateUserInfoVO);
+    R updateUserInfo(String token, String type, UpdateUserInfoVO updateUserInfoVO);
     // 邮箱密码登录
     R<UserLoginVO> emailPasswordLogin(EmailPasswordLoginVO emailPasswordLoginVo);
     // 邮箱验证码登录
     R<UserLoginVO> emailCodeLogin(EmailCodeLoginVO emailCodeLoginVo);
     // 登出
-    R logout(String token, Integer loginType);
+    R logout(String token, String loginType);
     // 重置密码
-    R resetPassword(String token, Integer loginType, ResetPasswordVO resetVo);
+    R resetPassword(String token, String loginType, ResetPasswordVO resetVo);
 }

@@ -25,11 +25,11 @@ public interface QtContactRequestService extends IService<QtContactRequest> {
     // 搜索群聊
     R<List<GroupInfoVO>> queryGroupInfo(GroupBasicInfoVO groupBasicInfoVO);
 
-    void applyAddFriend(String token, Integer type, ApplyJoinContactVO applyJoinContactVO);
+    void applyAddFriend(String token, String type, ApplyJoinContactVO applyJoinContactVO);
 
-    void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO);
+    void applyJoinGroup(String token, String type, ApplyJoinContactVO applyJoinContactVO);
     // 加载待处理请求
-    R<List<LoadPendingResponseVO>> loadPendingRequests(String token, Integer type, LoadPendingRequestsVO loadPendingRequestsVO);
+    R<List<LoadPendingResponseVO>> loadPendingRequests(String token, String type, LoadPendingRequestsVO loadPendingRequestsVO);
     // 处理表单申请
-    R handleFormApply(String token, Integer type, HandleFormApplyVO handleFormApplyVO);
+    R handleFormApply(String token, String type, HandleFormApplyVO handleFormApplyVO);
 }

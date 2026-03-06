@@ -1,6 +1,7 @@
 package course.QTalk.util;
 
 import cn.hutool.core.util.StrUtil;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.pojo.dto.TokenUserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -91,13 +91,12 @@ public class UserContactController {
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @RequestBody ApplyJoinContactVO applyJoinContactVO) {
-        Integer type = Convert.toInt(loginType);
 
         Integer applyType = applyJoinContactVO.getApplyType();
         ContactType contactType = ContactType.getByCode(applyType);
         switch (contactType) {
-            case USER -> contactRequestService.applyAddFriend(token, type, applyJoinContactVO);
-            case GROUP -> contactRequestService.applyJoinGroup(token, type, applyJoinContactVO);
+            case USER -> contactRequestService.applyAddFriend(token, loginType, applyJoinContactVO);
+            case GROUP -> contactRequestService.applyJoinGroup(token, loginType, applyJoinContactVO);
             default -> throw new RuntimeException("不支持的方式");
         }
 
@@ -119,8 +118,7 @@ public class UserContactController {
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @RequestBody LoadPendingRequestsVO loadPendingRequestsVO) {
-        Integer type = Convert.toInt(loginType);
-        return contactRequestService.loadPendingRequests(token, type, loadPendingRequestsVO);
+        return contactRequestService.loadPendingRequests(token, loginType, loadPendingRequestsVO);
     }
 
     @Operation(
@@ -138,8 +136,7 @@ public class UserContactController {
             @NotBlank(message = "Authorization不能为空") @RequestHeader("Authorization") String token,
             @NotBlank(message = "登录方式不能为空") @RequestHeader("LoginType") String loginType,
             @RequestBody HandleFormApplyVO handleFormApplyVO) {
-        Integer type = Convert.toInt(loginType);
-        return contactRequestService.handleFormApply(token, type, handleFormApplyVO);
+        return contactRequestService.handleFormApply(token, loginType, handleFormApplyVO);
     }
 
 }

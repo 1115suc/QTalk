@@ -5,8 +5,6 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.DigestUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -29,7 +27,6 @@ import course.QTalk.pojo.enums.DeletedEnum;
 import course.QTalk.pojo.enums.FriendStatus;
 import course.QTalk.pojo.enums.GroupRole;
 import course.QTalk.pojo.enums.GroupStatus;
-import course.QTalk.pojo.enums.LoginTypeEnum;
 import course.QTalk.pojo.enums.MessageTypeEnum;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.pojo.enums.StatusEnum;
@@ -51,7 +48,7 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.vo.response.UserSearchInfoVO;
 import course.QTalk.service.QtContactRequestService;
 import course.QTalk.mapper.QtContactRequestMapper;
-import course.QTalk.util.RedisComponent;
+import course.QTalk.handler.RedisComponent;
 import course.QTalk.util.RedisUtil;
 import course.QTalk.util.ToolUtils;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +57,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,13 +82,6 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
     private final QtContactRequestMapper qtContactRequestMapper;
     private final ChatMessageMapper chatMessageMapper;
     private final ChatSessionUserMapper chatSessionUserMapper;
-
-    private TokenUserDTO getTokenUserDTO(String token, Integer type) {
-        String redisPrefix = LoginTypeEnum.of(type).getPrefix();
-        Object tokenLoginInfo = redisUtil.get(redisPrefix + token);
-        TokenUserDTO tokenUserDTO = JSONUtil.toBean(tokenLoginInfo.toString(), TokenUserDTO.class);
-        return tokenUserDTO;
-    }
 
     @Override
     public R<List<UserSearchInfoVO>> searchUser(UserSearchVO userSearchVO) {
@@ -162,8 +151,8 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void applyAddFriend(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public void applyAddFriend(String token, String type, ApplyJoinContactVO applyJoinContactVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         String applyId = applyJoinContactVO.getApplyId();
         if (!applyId.startsWith("U")) {
@@ -236,8 +225,8 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void applyJoinGroup(String token, Integer type, ApplyJoinContactVO applyJoinContactVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public void applyJoinGroup(String token, String type, ApplyJoinContactVO applyJoinContactVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         String fromUid = tokenUserDTO.getUid();
         String groupId = applyJoinContactVO.getApplyId();
@@ -322,8 +311,8 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
     }
 
     @Override
-    public R<List<LoadPendingResponseVO>> loadPendingRequests(String token, Integer type, LoadPendingRequestsVO loadPendingRequestsVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public R<List<LoadPendingResponseVO>> loadPendingRequests(String token, String type, LoadPendingRequestsVO loadPendingRequestsVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         String uid = tokenUserDTO.getUid();
         Integer receivingType = loadPendingRequestsVO.getReceivingType();
@@ -352,8 +341,8 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R handleFormApply(String token, Integer type, HandleFormApplyVO handleFormApplyVO) {
-        TokenUserDTO tokenUserDTO = getTokenUserDTO(token, type);
+    public R handleFormApply(String token, String type, HandleFormApplyVO handleFormApplyVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(type, token);
 
         String uid = tokenUserDTO.getUid();
         String fromUid = handleFormApplyVO.getFromUid();

@@ -9,7 +9,7 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.properties.EmailConfigProperties;
 import course.QTalk.service.EmailCodeService;
-import course.QTalk.service.base.BaseService;
+import course.QTalk.handler.VerifyHandler;
 import course.QTalk.util.RedisUtil;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class EmailCodeServiceImpl implements EmailCodeService {
         String sessionId = vo.getSessionId();
         String checkCode = vo.getCheckCode();
 
-        BaseService.verifyCheckCode(checkCode, sessionId, redisUtil);
+        VerifyHandler.verifyCheckCode(checkCode, sessionId, redisUtil);
 
         String email = vo.getEmail();
         if (redisUtil.hasKey(RedisConstant.EMAIL_CODE + email)) {
