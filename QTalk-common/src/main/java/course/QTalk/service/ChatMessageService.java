@@ -3,6 +3,7 @@ package course.QTalk.service;
 import course.QTalk.pojo.dto.MessageSendDto;
 import course.QTalk.pojo.po.ChatMessage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import course.QTalk.pojo.vo.request.SendFileVO;
 import course.QTalk.pojo.vo.request.SendMessageVO;
 import course.QTalk.pojo.vo.response.R;
 
@@ -14,4 +15,8 @@ import course.QTalk.pojo.vo.response.R;
 public interface ChatMessageService extends IService<ChatMessage> {
     // 发送消息
     R<MessageSendDto> sendMessage(String token, String loginType, SendMessageVO sendMessageVO);
+
+    R sendFile(String token, String loginType, SendFileVO sendFileVO);
+
+    R downloadFile(String token, String loginType, String messageId);
 }

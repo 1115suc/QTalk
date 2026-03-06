@@ -2,6 +2,7 @@ package course.QTalk.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.CommonConstant;
@@ -9,6 +10,7 @@ import course.QTalk.exception.QTWebException;
 import course.QTalk.mapper.ChatSessionUserMapper;
 import course.QTalk.mapper.QtGroupMapper;
 import course.QTalk.mapper.SysUserMapper;
+import course.QTalk.minio.service.MinIOFileService;
 import course.QTalk.pojo.dto.MessageSendDto;
 import course.QTalk.pojo.dto.TokenUserDTO;
 import course.QTalk.pojo.enums.ContactType;
@@ -18,6 +20,7 @@ import course.QTalk.pojo.po.ChatMessage;
 import course.QTalk.pojo.po.ChatSessionUser;
 import course.QTalk.pojo.po.QtGroup;
 import course.QTalk.pojo.po.SysUser;
+import course.QTalk.pojo.vo.request.SendFileVO;
 import course.QTalk.pojo.vo.request.SendMessageVO;
 import course.QTalk.pojo.vo.response.R;
 import course.QTalk.service.ChatMessageService;
@@ -45,6 +48,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         implements ChatMessageService {
 
     private final RedisComponent redisComponent;
+    private final MinIOFileService minIOFileService;
     private final SysUserMapper sysUserMapper;
     private final QtGroupMapper qtGroupMapper;
     private final ChatMessageMapper chatMessageMapper;
@@ -103,6 +107,26 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         }
 
         return R.ok(messageSendDto);
+    }
+
+    // 文件上传
+    @Override
+    public R sendFile(String token, String loginType, SendFileVO sendFileVO) {
+        TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(loginType, token);
+
+        ChatMessage chatMessage = chatMessageMapper.selectById(sendFileVO.getMessageId());
+        if (!StrUtil.equals(chatMessage.getSendUserId(), tokenUserDTO.getUid())) {
+            log.debug("用户Id不一致：{}", chatMessage.getSendUserId());
+            throw new QTWebException(ResponseCode.CODE_600.getMessage());
+        }
+
+        return R.ok();
+    }
+
+    // 文件下载
+    @Override
+    public R downloadFile(String token, String loginType, String messageId) {
+        return null;
     }
 
     public MessageSendDto handlerMessage(ChatMessage chatMessage, ContactType type) {
