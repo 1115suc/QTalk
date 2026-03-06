@@ -14,8 +14,6 @@ import course.QTalk.pojo.vo.response.R;
 import course.QTalk.pojo.vo.response.UserSearchInfoVO;
 import course.QTalk.pojo.vo.response.LoadPendingResponseVO;
 import course.QTalk.service.QtContactRequestService;
-import course.QTalk.service.QtGroupService;
-import course.QTalk.service.SysUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -37,11 +35,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/contact")
 @RequiredArgsConstructor
-@Tag(name = "联系人/群管理", description = "联系人/群相关接口，包括搜索联系人/群、申请加入群聊，好友申请等功能")
+@Tag(name = "联系功能管理", description = "联系人/群相关接口，包括搜索联系人/群、申请加入群聊，好友申请等功能")
 public class UserContactController {
 
-    private final QtGroupService groupService;
-    private final SysUserService sysUserService;
     private final QtContactRequestService contactRequestService;
 
     @Operation(
@@ -51,7 +47,7 @@ public class UserContactController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
     @VerificationInterceptor(checkLogin = true)
     @PostMapping("/searchUser")
@@ -69,7 +65,7 @@ public class UserContactController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
     @VerificationInterceptor(checkLogin = true)
     @PostMapping("/queryGroupInfo")
@@ -87,7 +83,7 @@ public class UserContactController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
     @VerificationInterceptor(checkLogin = true)
     @PostMapping("/applyJoinGroup")
@@ -115,7 +111,7 @@ public class UserContactController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
     @VerificationInterceptor(checkLogin = true)
     @PostMapping("/loadPendingRequests")
@@ -134,7 +130,7 @@ public class UserContactController {
     )
     @Parameters({
             @Parameter(name = "Authorization", description = "用户Token", required = true, in = ParameterIn.HEADER),
-            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER),
+            @Parameter(name = "LoginType", description = "登录方式(1.Web 2.Android 3.ios)", required = true, in = ParameterIn.HEADER)
     })
     @VerificationInterceptor(checkLogin = true)
     @PostMapping("/handleFormApply")

@@ -53,12 +53,14 @@ import course.QTalk.service.QtContactRequestService;
 import course.QTalk.mapper.QtContactRequestMapper;
 import course.QTalk.util.RedisComponent;
 import course.QTalk.util.RedisUtil;
+import course.QTalk.util.ToolUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -463,7 +465,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
                 .eq(SysUser::getUid, ownUid));
         SysUser friend = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUid, friendUid));
-        String session = DigestUtil.md5Hex(owner.getUid() + ":" + friend.getUid());
+        String session = ToolUtils.getUserChatSession(ownUid, friendUid);
 
         List<ChatSessionUser> chatSessionUsers = new ArrayList<>();
 
@@ -496,7 +498,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         chatMessage.setSendTime(new Date().getTime());
         chatMessage.setContactId(friendUid);
         chatMessage.setContactType(ContactType.USER.getCode());
-        chatMessage.setStatus(CommonConstant.ZERO);
+        chatMessage.setStatus(CommonConstant.ONE);
         chatMessageMapper.insert(chatMessage);
 
         MessageSendDto messageSendDto = new MessageSendDto<>();
@@ -570,9 +572,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
                 .eq(SysUser::getUid, ownUid));
         QtGroup qtGroup = qtGroupMapper.selectOne(new LambdaQueryWrapper<QtGroup>()
                 .eq(QtGroup::getGroupId, groupId));
-        String session = DigestUtil.md5Hex(groupId);
-
-        List<ChatSessionUser> chatSessionUsers = new ArrayList<>();
+        String session = ToolUtils.getGroupChatSession(groupId);
 
         ChatSessionUser ownChatSessionUser = new ChatSessionUser();
         ownChatSessionUser.setSessionId(session);
@@ -581,18 +581,8 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         ownChatSessionUser.setContactName(qtGroup.getName());
         ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
         ownChatSessionUser.setLastReceiveTime(new Date().getTime());
-        chatSessionUsers.add(ownChatSessionUser);
 
-        ChatSessionUser friendChatSessionUser = new ChatSessionUser();
-        friendChatSessionUser.setSessionId(session);
-        friendChatSessionUser.setUid(qtGroup.getGroupId());
-        friendChatSessionUser.setContactId(qtOwn.getUid());
-        friendChatSessionUser.setContactName(qtOwn.getNickName());
-        friendChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
-        friendChatSessionUser.setLastReceiveTime(new Date().getTime());
-        chatSessionUsers.add(friendChatSessionUser);
-
-        chatSessionUserMapper.insertOrUpdate(chatSessionUsers);
+        chatSessionUserMapper.insertOrUpdate(ownChatSessionUser);
 
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setSessionId(session);
@@ -603,7 +593,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         chatMessage.setSendTime(new Date().getTime());
         chatMessage.setContactId(qtGroup.getGroupId());
         chatMessage.setContactType(ContactType.GROUP.getCode());
-        chatMessage.setStatus(CommonConstant.ZERO);
+        chatMessage.setStatus(CommonConstant.ONE);
         chatMessageMapper.insert(chatMessage);
 
         MessageSendDto messageSendDto = new MessageSendDto();

@@ -45,6 +45,7 @@ import course.QTalk.service.QtGroupService;
 import course.QTalk.mapper.QtGroupMapper;
 import course.QTalk.util.RedisComponent;
 import course.QTalk.util.RedisUtil;
+import course.QTalk.util.ToolUtils;
 import course.QTalk.websocket.ChannelContextUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,9 +149,8 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
 
         SysUser qtOwn = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUid, tokenUserDTO.getUid()));
-        String session = DigestUtil.md5Hex(groupId);
+        String session = ToolUtils.getGroupChatSession(groupId);
 
-        List<ChatSessionUser> chatSessionUsers = new ArrayList<>();
         ChatSessionUser ownChatSessionUser = new ChatSessionUser();
         ownChatSessionUser.setSessionId(session);
         ownChatSessionUser.setUid(qtOwn.getUid());
@@ -158,18 +158,8 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         ownChatSessionUser.setContactName(qtGroup.getName());
         ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
         ownChatSessionUser.setLastReceiveTime(new Date().getTime());
-        chatSessionUsers.add(ownChatSessionUser);
 
-        ChatSessionUser friendChatSessionUser = new ChatSessionUser();
-        friendChatSessionUser.setSessionId(session);
-        friendChatSessionUser.setUid(qtGroup.getGroupId());
-        friendChatSessionUser.setContactId(qtOwn.getUid());
-        friendChatSessionUser.setContactName(qtOwn.getNickName());
-        ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
-        ownChatSessionUser.setLastReceiveTime(new Date().getTime());
-        chatSessionUsers.add(friendChatSessionUser);
-
-        chatSessionUserMapper.insertOrUpdate(chatSessionUsers);
+        chatSessionUserMapper.insertOrUpdate(ownChatSessionUser);
 
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setSessionId(session);
@@ -180,7 +170,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         chatMessage.setSendTime(new Date().getTime());
         chatMessage.setContactId(qtGroup.getGroupId());
         chatMessage.setContactType(ContactType.GROUP.getCode());
-        chatMessage.setStatus(CommonConstant.ZERO);
+        chatMessage.setStatus(CommonConstant.ONE);
         chatMessageMapper.insert(chatMessage);
 
         redisComponent.addContactGroup(qtOwn.getUid(), groupId);
