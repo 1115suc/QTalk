@@ -26,6 +26,7 @@ public class InitConfig implements ApplicationRunner {
             log.info("Netty WebSocket 服务启动中...");
             new Thread(nettyWebSocketStarter).start();
         } catch (SQLException e) {
+
             log.error("数据库配置错误，请检查数据库配置");
         } catch (Exception e) {
             log.error("Netty Websocket 启动失败...");

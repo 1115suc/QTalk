@@ -39,3 +39,5 @@ CREATE TABLE `chat_session_user`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT ='联系人表';
 
+
+
