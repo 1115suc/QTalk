@@ -15,7 +15,7 @@ public class ParseUtil {
     private final RedisComponent redisComponent;
 
     // LoginType 和 Authorization 作为请求 query 传入的解析方法
-    private TokenUserDTO parseUrl(String url) {
+    public TokenUserDTO parseUrl(String url) {
         if (StrUtil.isEmpty(url) || url.indexOf("?") == -1) {
             return null;
         }

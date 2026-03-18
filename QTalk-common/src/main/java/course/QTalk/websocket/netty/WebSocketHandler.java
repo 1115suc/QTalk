@@ -1,11 +1,9 @@
 package course.QTalk.websocket.netty;
 
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
-import course.QTalk.exception.QTWebException;
 import course.QTalk.pojo.dto.TokenUserDTO;
-import course.QTalk.pojo.enums.ResponseCode;
 import course.QTalk.handler.RedisComponent;
+import course.QTalk.util.ParseUtil;
 import course.QTalk.util.RedisUtil;
 import course.QTalk.websocket.ChannelContextUtils;
 import io.netty.channel.Channel;
@@ -28,6 +26,7 @@ import org.springframework.stereotype.Component;
 public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     private final RedisUtil redisUtil;
+    private final ParseUtil parseUtil;
     private final RedisComponent redisComponent;
     private final ChannelContextUtils channelContextUtils;
 
@@ -56,19 +55,17 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
         if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
             log.info("WebSocket 握手完成");
             WebSocketServerProtocolHandler.HandshakeComplete complete = (WebSocketServerProtocolHandler.HandshakeComplete) evt;
+
+            String url = complete.requestUri();
             // 从握手完成事件中获取请求头
-            HttpHeaders entries = complete.requestHeaders();
+            // HttpHeaders entries = complete.requestHeaders();
 
-            String loginType = entries.get("LoginType");
-            String token = entries.get("Authorization");
-
-            if (StrUtil.isBlank(loginType) || StrUtil.isBlank(token)) {
-                throw new QTWebException(ResponseCode.HEADER_EMPTY_PARAM.getMessage());
-            }
+            /*String loginType = entries.get("LoginType");
+            String token = entries.get("Authorization");*/
 
             try {
                 // 校验用户信息是否有效，无效则关闭连接（认证失败）
-                TokenUserDTO tokenUserDTO = redisComponent.getTokenUserDTO(loginType, token);
+                TokenUserDTO tokenUserDTO = parseUtil.parseUrl(url);
                 if (ObjectUtil.isNull(tokenUserDTO)) {
                     log.error("WebSocket 认证失败：无效的token或参数");
                     ctx.channel().close();
