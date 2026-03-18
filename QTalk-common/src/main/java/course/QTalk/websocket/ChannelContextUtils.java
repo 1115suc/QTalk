@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -136,9 +137,14 @@ public class ChannelContextUtils {
 
         // 查询群聊消息
         if (CollectionUtil.isNotEmpty(contactGroupList)) {
-            messageLambdaQueryWrapper.in(ChatMessage::getContactId, contactGroupList);
+            // 将contactGroupList转化为String类型
+            List<String> safeList = contactGroupList.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.toList());
+            messageLambdaQueryWrapper.in(ChatMessage::getContactId, safeList);
             messageLambdaQueryWrapper.ge(ChatMessage::getSendTime, lastLoginTime);
-            chatMessageList.addAll(chatMessageMapper.selectList(messageLambdaQueryWrapper));
+            List<ChatMessage> chatMessages = chatMessageMapper.selectList(messageLambdaQueryWrapper);
+            chatMessageList.addAll(chatMessages);
         }
 
         // 查询好友消息

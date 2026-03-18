@@ -373,7 +373,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
                     addFriend(uid, fromUid, CommonConstant.ONE);
                 }
                 if (contactType.equals(ContactType.GROUP)) {
-                    addGroupMember(uid, toId, CommonConstant.TWO);
+                    addGroupMember(uid, fromUid, toId, CommonConstant.TWO);
                 }
                 break;
             case REJECT:
@@ -502,7 +502,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
     }
 
     // 添加群成员
-    private void addGroupMember(String ownUid, String groupId, Integer joinType) {
+    private void addGroupMember(String ownUid, String fromId, String groupId, Integer joinType) {
         QtGroup group = qtGroupMapper.selectOne(new LambdaQueryWrapper<QtGroup>()
                 .eq(QtGroup::getGroupId, groupId)
                 .eq(QtGroup::getStatus, GroupStatus.NORMAL.getCode()));
@@ -511,7 +511,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         }
 
         QtGroupMember qtGroupMember = qtGroupMemberMapper.selectOne(new LambdaQueryWrapper<QtGroupMember>()
-                .eq(QtGroupMember::getUserUid, ownUid)
+                .eq(QtGroupMember::getUserUid, fromId)
                 .eq(QtGroupMember::getGroupId, groupId));
 
         if (ObjectUtil.isNotNull(qtGroupMember) && qtGroupMember.getIsQuit().equals(CommonConstant.ZERO)) {
@@ -530,11 +530,11 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         }
 
         SysUser owner = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUid, ownUid)
+                .eq(SysUser::getUid, fromId)
                 .eq(SysUser::getStatus, StatusEnum.NORMAL.getCode()));
 
         QtGroupMember member = QtGroupMember.builder()
-                .userUid(ownUid)
+                .userUid(fromId)
                 .groupId(groupId)
                 .role(GroupRole.NORMAL.getCode())
                 .alias(owner.getNickName())
@@ -550,15 +550,15 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
                 .eq(QtGroup::getGroupId, groupId)
                 .set(QtGroup::getCurrentCount, group.getCurrentCount() + 1));
 
-        if (StrUtil.isAllNotBlank(ownUid, groupId)) {
-            redisComponent.addContactGroup(ownUid, groupId);
+        if (StrUtil.isAllNotBlank(fromId, groupId)) {
+            redisComponent.addContactGroup(fromId, groupId);
         } else {
-            log.error("用户:{} 加入群:{} 失败", ownUid, groupId);
+            log.error("用户:{} 加入群:{} 失败", fromId, groupId);
             throw new QTWebException(ResponseCode.PARAM_ERROR.getMessage());
         }
 
         SysUser qtOwn = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUid, ownUid));
+                .eq(SysUser::getUid, fromId));
         QtGroup qtGroup = qtGroupMapper.selectOne(new LambdaQueryWrapper<QtGroup>()
                 .eq(QtGroup::getGroupId, groupId));
         String session = ToolUtils.getGroupChatSession(groupId);
@@ -568,7 +568,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         ownChatSessionUser.setUid(qtOwn.getUid());
         ownChatSessionUser.setContactId(qtGroup.getGroupId());
         ownChatSessionUser.setContactName(qtGroup.getName());
-        ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        ownChatSessionUser.setLastMessage(String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
         ownChatSessionUser.setLastReceiveTime(new Date().getTime());
 
         chatSessionUserMapper.insertOrUpdate(ownChatSessionUser);
@@ -576,7 +576,7 @@ public class QtContactRequestServiceImpl extends ServiceImpl<QtContactRequestMap
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setSessionId(session);
         chatMessage.setMessageType(MessageTypeEnum.ADD_GROUP.getType());
-        chatMessage.setMessageContent(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        chatMessage.setMessageContent(String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
         chatMessage.setSendUserId(qtOwn.getUid());
         chatMessage.setSendUserNickname(qtOwn.getNickName());
         chatMessage.setSendTime(new Date().getTime());

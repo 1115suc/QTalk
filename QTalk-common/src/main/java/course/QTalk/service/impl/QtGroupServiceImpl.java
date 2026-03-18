@@ -145,7 +145,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         ownChatSessionUser.setUid(qtOwn.getUid());
         ownChatSessionUser.setContactId(qtGroup.getGroupId());
         ownChatSessionUser.setContactName(qtGroup.getName());
-        ownChatSessionUser.setLastMessage(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        ownChatSessionUser.setLastMessage(String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
         ownChatSessionUser.setLastReceiveTime(new Date().getTime());
 
         chatSessionUserMapper.insertOrUpdate(ownChatSessionUser);
@@ -153,7 +153,7 @@ public class QtGroupServiceImpl extends ServiceImpl<QtGroupMapper, QtGroup>
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setSessionId(session);
         chatMessage.setMessageType(MessageTypeEnum.ADD_GROUP.getType());
-        chatMessage.setMessageContent(StrUtil.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
+        chatMessage.setMessageContent(String.format(MessageTypeEnum.ADD_GROUP.getInitMessage(), qtOwn.getNickName()));
         chatMessage.setSendUserId(qtOwn.getUid());
         chatMessage.setSendUserNickname(qtOwn.getNickName());
         chatMessage.setSendTime(new Date().getTime());

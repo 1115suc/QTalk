@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import course.QTalk.constant.CommonConstant;
 import course.QTalk.exception.QTWebException;
+import course.QTalk.handler.MessageTopicHandler;
 import course.QTalk.mapper.ChatSessionUserMapper;
 import course.QTalk.mapper.QtGroupMapper;
 import course.QTalk.mapper.SysUserMapper;
@@ -48,6 +49,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         implements ChatMessageService {
 
     private final RedisComponent redisComponent;
+    private final MessageTopicHandler messageTopicHandler;
     private final MinIOFileService minIOFileService;
     private final SysUserMapper sysUserMapper;
     private final QtGroupMapper qtGroupMapper;
@@ -222,6 +224,9 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
         messageSendDto.setFileName(chatMessages.get(0).getFileName());
         messageSendDto.setFileType(chatMessages.get(0).getFileType());
         log.debug("发送消息：{}", messageSendDto);
+
+        messageTopicHandler.sendMessage(messageSendDto);
+
         return messageSendDto;
     }
 

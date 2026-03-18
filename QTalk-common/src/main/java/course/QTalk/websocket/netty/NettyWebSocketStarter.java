@@ -80,7 +80,7 @@ public class NettyWebSocketStarter implements Runnable {
                     .bind(nettyProperties.getPort())
                     .sync();
             log.info("Netty WebSocket 服务初始化完成... 端口:{}", nettyProperties.getPort());
-            log.info("Netty WebSocket 请求url: ws://{}:{}/{}", nettyProperties.getIp(), nettyProperties.getPort(), nettyProperties.getPath());
+            log.info("Netty WebSocket 请求url: ws://{}:{}{}", nettyProperties.getIp(), nettyProperties.getPort(), nettyProperties.getPath());
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -193,7 +193,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
                 .collect(Collectors.toList());
         redisComponent.cleanContactUser(sysUser.getUid());
         if (CollectionUtil.isNotEmpty(friendUids)) {
-            redisUtil.lSet(RedisConstant.FRIEND_LIST + sysUser.getUid(), friendUids, TimeConstant.ONE_WEEK);
+            for (String friendUid : friendUids) {
+                redisUtil.lSet(RedisConstant.FRIEND_LIST + sysUser.getUid(), friendUid, TimeConstant.ONE_WEEK);
+            }
         }
 
         // 查询群组
@@ -207,7 +209,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
                 .collect(Collectors.toList());
         redisComponent.cleanContactGroup(sysUser.getUid());
         if (CollectionUtil.isNotEmpty(groupIds)) {
-            redisUtil.lSet(RedisConstant.GROUP_LIST + sysUser.getUid(), groupIds, TimeConstant.ONE_WEEK);
+            for (String groupUid : groupIds) {
+                redisUtil.lSet(RedisConstant.GROUP_LIST + sysUser.getUid(), groupUid, TimeConstant.ONE_WEEK);
+            }
         }
 
         String redisPrefix = LoginTypeEnum.of(loginWhere).getPrefix();
