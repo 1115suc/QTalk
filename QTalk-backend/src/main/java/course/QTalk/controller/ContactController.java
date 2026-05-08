@@ -1,6 +1,5 @@
 package course.QTalk.controller;
 
-import cn.hutool.core.convert.Convert;
 import course.QTalk.annotation.VerificationInterceptor;
 import course.QTalk.pojo.enums.ContactType;
 import course.QTalk.pojo.enums.ResponseCode;
@@ -36,7 +35,7 @@ import java.util.List;
 @RequestMapping("/contact")
 @RequiredArgsConstructor
 @Tag(name = "联系功能管理", description = "联系人/群相关接口，包括搜索联系人/群、申请加入群聊，好友申请等功能")
-public class UserContactController {
+public class ContactController {
 
     private final QtContactRequestService contactRequestService;
 

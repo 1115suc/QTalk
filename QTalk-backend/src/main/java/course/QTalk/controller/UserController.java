@@ -1,6 +1,5 @@
 package course.QTalk.controller;
 
-import cn.hutool.core.convert.Convert;
 import course.QTalk.annotation.VerificationInterceptor;
 import course.QTalk.pojo.vo.request.UpdateUserInfoVO;
 import course.QTalk.pojo.vo.response.R;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/user")
 @RequiredArgsConstructor
 @Tag(name = "用户信息管理", description = "用户信息相关接口，包括更新用户信息等功能")
-public class UserInfoController {
+public class UserController {
 
     private final SysUserService sysUserService;
 
