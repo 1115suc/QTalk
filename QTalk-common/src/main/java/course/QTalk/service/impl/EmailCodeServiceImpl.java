@@ -14,11 +14,13 @@ import course.QTalk.util.RedisUtil;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -60,9 +62,12 @@ public class EmailCodeServiceImpl implements EmailCodeService {
             helper.setFrom(emailConfig.getUsername());
             helper.setTo(toEmail);
 
-            helper.setSubject("QAssistant 邮箱验证码");
+            helper.setSubject("青聊 邮箱验证码");
 
-            String htmlContent = new String(Files.readAllBytes(Paths.get("document/email/EmailHtml.html")));
+            ClassPathResource resource = new ClassPathResource("email/EmailHtml.html");
+            InputStream inputStream = resource.getInputStream();
+            String htmlContent = new String(inputStream.readAllBytes());
+            inputStream.close();
             htmlContent = htmlContent.replace("123456", code);
             helper.setText(htmlContent, true);
 
